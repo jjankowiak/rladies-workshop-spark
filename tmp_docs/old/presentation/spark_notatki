@@ -1,0 +1,60 @@
+Co to jest Apache Spark? [logo]
+Silnik do analizy dużych danych, zaprojektowany do szybkich obliczeń.
+
+Główną zaletą Sparka jest możliwość obliczeń w pamięci, co przyspiesza szybkość aplikacji.
+
+
+Historia rozwoju Sparka [uniwersytet berkley logo]
+2009 - opracowanie oprogramowania na Uniwersytecie Kalifornijskim w Berkeley. 
+2010 - "wypuszczenie" jako wolne oprogramowanie zgodnie z licencją BSD (Berkeley Software Distribution License)
+2013 - przekazanie Sparka do fundacji Apache Software
+od 2014 - Spark jest jednym z czołowych projektów Apache
+
+Cechy Sparka:
+- szybkość - działa do 100 razy szybciej niż MapReduce, gdy obliczenia wykonywane są w pamięci i do 10 razy szybciej gsy wykonywane są na dysku [wykres]
+- wspiera wiele języków - wbudowane API dla jezyków Java, Scala, Python, R
+- zaawansowana analityka - nie tylko 'map' i 'reduce' ale również SQL, strumienie danych, machine learning oraz algorytmy grafowe
+
+Komponenty Sparka
+[wykres]
+
+Resilient Distributed Datasets (leniwe kolekcje rozproszone)
+- podstawowa struktura danych
+- rozproszona, niezmienialna (immutable) kolekcja objektów
+- każdy zbiór RDD jest podzielony na partycje, które mogą być przetwarzane na różnych nodach w klastrach równolegle
+- dzięki RDD mozliwe jest osiągnięcie szybszych wyników operacji MapReduce
+Jak tworzymy RDD?
+- poprzez zrównoleglenie istniejącej kolekcji
+- poprzez transformację instniejącego RDD
+- z plików na HDFS lub innych systemów przechowywania
+
+MapReduce
+[wyjaśnić na wordcountach, jakiś wykres]
+
+Dlaczego Hadoopowe MapReduce jest nieefektywne?
+[wykres z iteracyjnym MaprReduce]
+Operacje czytania danych z dysku i zapisywania na dysk są bardzo czasochłonne. Mogą zając nawet 90% całkowitego czasu działania aplikacji.
+
+Sparkowa alternatywa
+RDD wspiera obliczenia w pamięci, tzn. stan pamięci przechowywany jest jako obiekt, który jest współdzielony pomiędzy operacje.
+[wykres]
+Uwaga - jeżeli RAM nie jest w stanie pomieścić pośrednich rezultatów obliczeń, wtedy będa one przechowywane na dysku.
+
+Python Spark (pySpark)
+- API do Sparka bazujące na języku Python
+
+Spark Context
+- program Sparka najpierw tworzy `SparkContext`:
+-- mówi Sparkowi jak i gdzie dostać się do klastra
+-- pySpark shell automatycznie tworzy zmienną `sc` 
+-- w iPython musimy użyć konstruktora żeby utworzyć nowy `SparkContext`
+-  używamy `SparkContext` żeby utworzyć RDD
+
+My będziemy używać Sparka lokalnie.
+
+
+
+Operacje na RDD
+- Transformacje
+
+- Akcje
