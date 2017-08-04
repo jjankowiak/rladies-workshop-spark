@@ -1,5 +1,5 @@
 ---
-title: "Introduction to Spark in R"
+title: "Introduction to Spark in R (using *sparklyr*)"
 subtitle: "<small><br>Justyna Jankowiak</small>"
 author: "<small>
 <a href='https://stackoverflow.com/users/3477789/jjankowiak'><i class='fa fa-stack-overflow'></i></a>&nbsp;&nbsp;
@@ -37,6 +37,82 @@ htmltools::tagList(rmarkdown::html_dependency_font_awesome())
 # Sys.setenv(JAVA_HOME='/usr/lib/jvm/java-7-openjdk-amd64')
 ```
 
+# What is Spark?
+
+## What is Spark?
+![Thanks](images/spark_logo.png)
+
+> **Apache Spark™** is a fast and general engine for large-scale data processing.
+
+<small> Source: [https://spark.apache.org/](https://spark.apache.org/) </small>
+
+# What are the benefits of Spark?
+
+## Speed
+
+Spark runs programs up to 100x faster than Hadoop MapReduce in memory, or 10x faster on disk. 
+
+![Thanks](images/logistic-regression.png)
+
+<small> Source: [https://spark.apache.org/](https://spark.apache.org/) </small>
+
+## Ease of use
+Spark has easy-to-use APIs in Java, Scala, Python, R for operating on large datasets. 
+
+## Generality 
+Spark comes packaged with higher-level libraries, including support for SQL queries, streaming data, machine learning and graph processing.
+
+![Thanks](images/ecosystem.png)
+
+<small> Source: [https://databricks.com/spark/about](https://databricks.com/spark) </small>
+
+# Spark Ecosystem
+
+## Spark SQL + DataFrames
+
+> **Spark SQL** is module for working with structured data.
+
+## Spark SQL + DataFrames
+
+- lets you query structured data inside Spark programs, using either SQL or a familiar DataFrame API
+- acts like distributed SQL query engine
+- enables unmodified Hadoop Hive queries to run up to 100x faster
+- provides industry standard JDBC and ODBC connectivity for business intelligence tools
+
+## Streaming
+
+> **Spark Streaming** makes it easy to build scalable fault-tolerant streaming applications.
+
+## Streaming
+
+- lets you write streaming jobs the same way you write batch jobs.
+- is fault-tolerant - recovers lost work out of the box
+- intergrates with a wide variety of popular data sources, including HDFS, Flume, Kafka and Twitter
+
+## MLlib (Machine Learning)
+
+> **MLlib** is Apache Spark's scalable machine learning library.
+
+## MLlib (Machine Learning)
+
+- usable in Java, Scala, Python and R
+- contains high-quality algorithms that leverage iteration, and can yield better results than the one-pass approximations sometimes used on MapReduce
+- runs on existing Hadoop clusters and data
+
+## GraphX (Graph Computation)
+
+> **GraphX** is Apache Spark's API for graphs and graph-parallel computation.
+
+## GraphX (Graph Computation)
+
+- competes on performance with the fastest graph systems while retaining Spark's flexibility, fault tolerance, and ease of use.
+- comes with variety of graph algorithms
+
+# Spark in R
+
+## SparkR
+
+## sparklyr
 # What can be called an <br> (R) application?
 
 ## What can be called an <br> (R) application?

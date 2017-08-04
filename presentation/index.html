@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="generator" content="pandoc">
   <meta name="author" content="" />
-  <title>Introduction to Spark in R</title>
+  <title>Introduction to Spark in R (using sparklyr)</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
@@ -492,12 +492,88 @@ document.getElementsByTagName('head')[0].appendChild(style);
     <div class="slides">
 
 <section>
-    <h1 class="title">Introduction to Spark in R</h1>
+    <h1 class="title">Introduction to Spark in R (using <em>sparklyr</em>)</h1>
   <h1 class="subtitle"><small><br>Justyna Jankowiak</small></h1>
     <h2 class="author"><small> <a href='https://stackoverflow.com/users/3477789/jjankowiak'><i class='fa fa-stack-overflow'></i></a>   <a href='https://github.com/jjankowiak'><i class='fa fa-github'></i></a>   <a href='https://www.linkedin.com/in/justynajankowiak/'><i class='fa fa-linkedin'></i></a>   <a href='mailto:just.jankowiak@gmail.com'><i class='fa fa-envelope-o'></i></a> </small><br></h2>
     <h3 class="date">07-08.10.2017</h3>
 </section>
 
+<section><section id="what-is-spark" class="titleslide slide level1"><h1>What is Spark?</h1></section><section id="what-is-spark-1" class="slide level2">
+<h1>What is Spark?</h1>
+<p><img src="images/spark_logo.png" alt="Thanks" /></p>
+<blockquote>
+<p><strong>Apache Spark™</strong> is a fast and general engine for large-scale data processing.</p>
+</blockquote>
+<p><small> Source: <a href="https://spark.apache.org/" class="uri">https://spark.apache.org/</a> </small></p>
+</section></section>
+<section><section id="what-are-the-benefits-of-spark" class="titleslide slide level1"><h1>What are the benefits of Spark?</h1></section><section id="speed" class="slide level2">
+<h1>Speed</h1>
+<p>Spark runs programs up to 100x faster than Hadoop MapReduce in memory, or 10x faster on disk.</p>
+<p><img src="images/logistic-regression.png" alt="Thanks" /></p>
+<p><small> Source: <a href="https://spark.apache.org/" class="uri">https://spark.apache.org/</a> </small></p>
+</section><section id="ease-of-use" class="slide level2">
+<h1>Ease of use</h1>
+<p>Spark has easy-to-use APIs in Java, Scala, Python, R for operating on large datasets.</p>
+</section><section id="generality" class="slide level2">
+<h1>Generality</h1>
+<p>Spark comes packaged with higher-level libraries, including support for SQL queries, streaming data, machine learning and graph processing.</p>
+<p><img src="images/ecosystem.png" alt="Thanks" /></p>
+<p><small> Source: <a href="https://databricks.com/spark">https://databricks.com/spark/about</a> </small></p>
+</section></section>
+<section><section id="spark-ecosystem" class="titleslide slide level1"><h1>Spark Ecosystem</h1></section><section id="spark-sql-dataframes" class="slide level2">
+<h1>Spark SQL + DataFrames</h1>
+<blockquote>
+<p><strong>Spark SQL</strong> is module for working with structured data.</p>
+</blockquote>
+</section><section id="spark-sql-dataframes-1" class="slide level2">
+<h1>Spark SQL + DataFrames</h1>
+<ul>
+<li>lets you query structured data inside Spark programs, using either SQL or a familiar DataFrame API</li>
+<li>acts like distributed SQL query engine</li>
+<li>enables unmodified Hadoop Hive queries to run up to 100x faster</li>
+<li>provides industry standard JDBC and ODBC connectivity for business intelligence tools</li>
+</ul>
+</section><section id="streaming" class="slide level2">
+<h1>Streaming</h1>
+<blockquote>
+<p><strong>Spark Streaming</strong> makes it easy to build scalable fault-tolerant streaming applications.</p>
+</blockquote>
+</section><section id="streaming-1" class="slide level2">
+<h1>Streaming</h1>
+<ul>
+<li>lets you write streaming jobs the same way you write batch jobs.</li>
+<li>is fault-tolerant - recovers lost work out of the box</li>
+<li>intergrates with a wide variety of popular data sources, including HDFS, Flume, Kafka and Twitter</li>
+</ul>
+</section><section id="mllib-machine-learning" class="slide level2">
+<h1>MLlib (Machine Learning)</h1>
+<blockquote>
+<p><strong>MLlib</strong> is Apache Spark’s scalable machine learning library.</p>
+</blockquote>
+</section><section id="mllib-machine-learning-1" class="slide level2">
+<h1>MLlib (Machine Learning)</h1>
+<ul>
+<li>usable in Java, Scala, Python and R</li>
+<li>contains high-quality algorithms that leverage iteration, and can yield better results than the one-pass approximations sometimes used on MapReduce</li>
+<li>runs on existing Hadoop clusters and data</li>
+</ul>
+</section><section id="graphx-graph-computation" class="slide level2">
+<h1>GraphX (Graph Computation)</h1>
+<blockquote>
+<p><strong>GraphX</strong> is Apache Spark’s API for graphs and graph-parallel computation.</p>
+</blockquote>
+</section><section id="graphx-graph-computation-1" class="slide level2">
+<h1>GraphX (Graph Computation)</h1>
+<ul>
+<li>competes on performance with the fastest graph systems while retaining Spark’s flexibility, fault tolerance, and ease of use.</li>
+<li>comes with variety of graph algorithms</li>
+</ul>
+</section></section>
+<section><section id="spark-in-r" class="titleslide slide level1"><h1>Spark in R</h1></section><section id="sparkr" class="slide level2">
+<h1>SparkR</h1>
+</section><section id="sparklyr" class="slide level2">
+<h1>sparklyr</h1>
+</section></section>
 <section><section id="what-can-be-called-an-r-application" class="titleslide slide level1"><h1>What can be called an <br> (R) application?</h1></section><section id="what-can-be-called-an-r-application-1" class="slide level2">
 <h1>What can be called an <br> (R) application?</h1>
 <blockquote>
