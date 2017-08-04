@@ -110,7 +110,7 @@ Spark comes packaged with higher-level libraries, including support for SQL quer
 
 # Spark in R
 
-Testing R conncetion with Git
+Testing R conncetion with Git. What can I do?
 
 ## SparkR
 
