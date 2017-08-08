@@ -132,4 +132,26 @@ Spark comes packaged with higher-level libraries, including support for SQL quer
 ![Thanks](images/sparklyr.png)
 <small> Source: [https://blog.cloudera.com](https://blog.cloudera.com/blog/2016/09/introducing-sparklyr-an-r-interface-for-apache-spark/) </small>
 
+# How to start working with *Spark* and *sparklyr*?
+
+## Install *sparklyr*
+
+```{r, eval = FALSE}
+# install devtools package
+install.packages("devtools")
+library(devtools)
+# install latest version of sparklyr
+devtools::install_github("rstudio/sparklyr")
+```
+
+## Install *Spark* through *sparklyr*
+
+```{r, eval = FALSE}
+library(sparklyr)
+# check available versions of Spark
+spark_available_versions()
+# install locally the latest version
+spark_install(version = "2.2.0")
+```
+
 # Let's start coding!
