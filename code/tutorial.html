@@ -123,7 +123,31 @@ $(document).ready(function () {
 </div>
 
 
+<div id="workflow" class="section level1">
+<h1>Workflow</h1>
+<p>The typical workflow has three steps:</p>
+<ol style="list-style-type: decimal">
+<li>Connect,</li>
+<li>Do some work,</li>
+<li>Disconnect.</li>
+</ol>
+<pre class="r"><code>library(sparklyr)
 
+# connect
+conn &lt;- spark_connect(master = &quot;local&quot;)
+# It's possible that you have to set JAVA_HOME and SPARK_HOME variables 
+# Sys.setenv(JAVA_HOME = &quot;/usr/lib/jvm/java-8-openjdk-amd64&quot;)
+# Sys.setenv(SPARK_HOME = &quot;/home/justyna/spark/spark-2.2.0-bin-hadoop2.7&quot;)
+
+# do some work
+spark_connection_is_open(conn)
+
+# disconnect
+spark_disconnect(conn)</code></pre>
+<p><code>spark_connect()</code> takes argument <code>master</code> which is url to Spark cluster to connect to. We use <code>&quot;local&quot;</code> to connect to local instance of Spark install via <code>spark_install()</code>.</p>
+<p>Now we can check if the connection is open using <code>spark_connection_is_open()</code> with the name of created connection as its argument.</p>
+<p>After our work is done we can close the connection with <code>spark_disconnect(conn)</code>.</p>
+</div>
 
 
 

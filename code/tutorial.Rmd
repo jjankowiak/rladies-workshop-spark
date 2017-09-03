@@ -4,3 +4,33 @@ author: "Justyna Jankowiak"
 date: "07-08.10.2017"
 output: html_document
 ---
+
+# Workflow
+
+The typical workflow has three steps:
+
+1. Connect,
+2. Do some work,
+3. Disconnect.
+
+```{r, results=FALSE, warning=FALSE, message=FALSE}
+library(sparklyr)
+
+# connect
+conn <- spark_connect(master = "local")
+# It's possible that you have to set JAVA_HOME and SPARK_HOME variables 
+# Sys.setenv(JAVA_HOME = "/usr/lib/jvm/java-8-openjdk-amd64")
+# Sys.setenv(SPARK_HOME = "/home/justyna/spark/spark-2.2.0-bin-hadoop2.7")
+
+# do some work
+spark_connection_is_open(conn)
+
+# disconnect
+spark_disconnect(conn)
+```
+
+`spark_connect()` takes argument `master` which is url to Spark cluster to connect to. We use `"local"` to connect to local instance of Spark install via `spark_install()`.
+
+Now we can check if the connection is open using `spark_connection_is_open()` with the name of created connection as its argument.
+
+After our work is done we can close the connection with `spark_disconnect(conn)`.

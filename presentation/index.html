@@ -592,24 +592,30 @@ document.getElementsByTagName('head')[0].appendChild(style);
 </section><section id="a-word-of-warning" class="slide level2">
 <h1>A word of warning</h1>
 <ul>
-<li><em>Spark</em> is still new technology and sometimes you don’t get clear error messages,</li>
+<li>Spark is still new technology and sometimes you don’t get clear error messages,</li>
 <li><em>sparklyr</em> is newer and doesn’t have a full set of features - the Scala and Python interfaces to Spark are more mature.</li>
 </ul>
 </section></section>
-<section><section id="how-to-start-working-with-spark-and-sparklyr" class="titleslide slide level1"><h1>How to start working with <em>Spark</em> and <em>sparklyr</em>?</h1></section><section id="install-sparklyr" class="slide level2">
+<section><section id="how-to-start-working-with-spark-and-sparklyr" class="titleslide slide level1"><h1>How to start working with Spark and <em>sparklyr</em>?</h1></section><section id="install-sparklyr" class="slide level2">
 <h1>Install <em>sparklyr</em></h1>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># install devtools package</span>
 <span class="kw">install.packages</span>(<span class="st">&quot;devtools&quot;</span>)
 <span class="kw">library</span>(devtools)
-<span class="co"># install latest version of sparklyr</span>
+<span class="co"># install the latest version of sparklyr</span>
 devtools::<span class="kw">install_github</span>(<span class="st">&quot;rstudio/sparklyr&quot;</span>)</code></pre></div>
 </section><section id="install-spark-through-sparklyr" class="slide level2">
-<h1>Install <em>Spark</em> through <em>sparklyr</em></h1>
+<h1>Install Spark through <em>sparklyr</em></h1>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(sparklyr)
 <span class="co"># check available versions of Spark</span>
 <span class="kw">spark_available_versions</span>()
 <span class="co"># install locally the latest version</span>
 <span class="kw">spark_install</span>(<span class="dt">version =</span> <span class="st">&quot;2.2.0&quot;</span>)</code></pre></div>
+</section><section id="make-sure-java-is-installed" class="slide level2">
+<h1>Make sure Java is installed</h1>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="co"># check available version of Java</span>
+<span class="kw">java</span> -version
+<span class="co"># if not available, install it</span>
+<span class="kw">sudo</span> apt install openjdk-8-jdk openjdk-8-jre</code></pre></div>
 </section></section>
 <section><section id="lets-start-coding" class="titleslide slide level1"><h1>Let’s start coding!</h1></section></section>
     </div>
