@@ -513,7 +513,7 @@ document.getElementsByTagName('head')[0].appendChild(style);
 <p><small> Source: <a href="https://spark.apache.org/" class="uri">https://spark.apache.org/</a> </small></p>
 </section><section id="ease-of-use" class="slide level2">
 <h1>Ease of use</h1>
-<p>Spark has easy-to-use APIs in Java, Scala, Python, R for operating on large datasets.</p>
+<p>Spark has easy-to-use APIs in Java, Scala, Python and R for operating on large datasets.</p>
 </section><section id="generality" class="slide level2">
 <h1>Generality</h1>
 <p>Spark comes packaged with higher-level libraries, including support for SQL queries, streaming data, machine learning and graph processing.</p>
@@ -528,10 +528,10 @@ document.getElementsByTagName('head')[0].appendChild(style);
 </section><section id="spark-sql-dataframes-1" class="slide level2">
 <h1>Spark SQL + DataFrames</h1>
 <ul>
-<li>lets you query structured data inside Spark programs, using either SQL or a familiar DataFrame API</li>
-<li>acts like distributed SQL query engine</li>
-<li>enables unmodified Hadoop Hive queries to run up to 100x faster</li>
-<li>provides industry standard JDBC and ODBC connectivity for business intelligence tools</li>
+<li>lets you query structured data inside Spark programs, using either SQL or a familiar DataFrame API,</li>
+<li>acts like distributed SQL query engine,</li>
+<li>enables unmodified Hadoop Hive queries to run up to 100x faster,</li>
+<li>provides industry standard JDBC and ODBC connectivity for business intelligence tools.</li>
 </ul>
 </section><section id="streaming" class="slide level2">
 <h1>Streaming</h1>
@@ -541,9 +541,9 @@ document.getElementsByTagName('head')[0].appendChild(style);
 </section><section id="streaming-1" class="slide level2">
 <h1>Streaming</h1>
 <ul>
-<li>lets you write streaming jobs the same way you write batch jobs.</li>
-<li>is fault-tolerant - recovers lost work out of the box</li>
-<li>intergrates with a wide variety of popular data sources, including HDFS, Flume, Kafka and Twitter</li>
+<li>lets you write streaming jobs the same way you write batch jobs,</li>
+<li>is fault-tolerant - recovers lost work out of the box,</li>
+<li>intergrates with a wide variety of popular data sources, including HDFS, Flume, Kafka and Twitter.</li>
 </ul>
 </section><section id="mllib-machine-learning" class="slide level2">
 <h1>MLlib (Machine Learning)</h1>
@@ -553,9 +553,9 @@ document.getElementsByTagName('head')[0].appendChild(style);
 </section><section id="mllib-machine-learning-1" class="slide level2">
 <h1>MLlib (Machine Learning)</h1>
 <ul>
-<li>usable in Java, Scala, Python and R</li>
-<li>contains high-quality algorithms that leverage iteration, and can yield better results than the one-pass approximations sometimes used on MapReduce</li>
-<li>runs on existing Hadoop clusters and data</li>
+<li>usable in Java, Scala, Python and R,</li>
+<li>contains high-quality algorithms that leverage iteration, and can yield better results than the one-pass approximations sometimes used on MapReduce,</li>
+<li>runs on existing Hadoop clusters and data.</li>
 </ul>
 </section><section id="graphx-graph-computation" class="slide level2">
 <h1>GraphX (Graph Computation)</h1>
@@ -565,30 +565,36 @@ document.getElementsByTagName('head')[0].appendChild(style);
 </section><section id="graphx-graph-computation-1" class="slide level2">
 <h1>GraphX (Graph Computation)</h1>
 <ul>
-<li>competes on performance with the fastest graph systems while retaining Spark’s flexibility, fault tolerance, and ease of use.</li>
-<li>comes with variety of graph algorithms</li>
+<li>competes on performance with the fastest graph systems while retaining Spark’s flexibility, fault tolerance and ease of use,</li>
+<li>comes with variety of graph algorithms.</li>
 </ul>
 </section></section>
 <section><section id="spark-in-r" class="titleslide slide level1"><h1>Spark in R</h1></section><section id="sparkr-and-sparklyr" class="slide level2">
 <h1><em>SparkR</em> and <em>sparklyr</em></h1>
 <p><em>SparkR</em> and <em>sparklyr</em> are both R interfaces to Spark, which:</p>
 <ul>
-<li>support connecting to local and remote Spark clusters</li>
-<li>provide a <em>dplyr</em> compatible back-end</li>
-<li>provide an interface to Spark’s built-in machine learning algorithms</li>
+<li>support connecting to local and remote Spark clusters,</li>
+<li>provide a <em>dplyr</em> compatible back-end,</li>
+<li>provide an interface to Spark’s built-in machine learning algorithms.</li>
 </ul>
 <p><small>Worth reading: <a href="https://github.com/rstudio/sparklyr/issues/502"><em>sparklyr</em> and <em>SparkR</em> - the future?</a> </small></p>
 </section><section id="sparklyr" class="slide level2">
 <h1>sparklyr</h1>
 <ul>
-<li>connect to Spark from R. The sparklyr package provides a complete <em>dplyr</em> backend.</li>
-<li>filter and aggregate Spark datasets then bring them into R for analysis and visualization.</li>
-<li>use Spark’s distributed machine learning library from R.</li>
-<li>create extensions that call the full Spark API and provide interfaces to Spark packages.</li>
+<li>connects to Spark from R and provides a complete <em>dplyr</em> backend,</li>
+<li>filters and aggregates Spark datasets then brings them into R for analysis and visualization,</li>
+<li>uses Spark’s distributed machine learning library from R,</li>
+<li>creates extensions that call the full Spark API and provides interfaces to Spark packages.</li>
 </ul>
 </section><section id="sparklyr-1" class="slide level2">
 <h1>sparklyr</h1>
 <p><img src="images/sparklyr.png" alt="Thanks" /> <small> Source: <a href="https://blog.cloudera.com/blog/2016/09/introducing-sparklyr-an-r-interface-for-apache-spark/">https://blog.cloudera.com</a> </small></p>
+</section><section id="a-word-of-warning" class="slide level2">
+<h1>A word of warning</h1>
+<ul>
+<li><em>Spark</em> is still new technology and sometimes you don’t get clear error messages,</li>
+<li><em>sparklyr</em> is newer and doesn’t have a full set of features - the Scala and Python interfaces to Spark are more mature.</li>
+</ul>
 </section></section>
 <section><section id="how-to-start-working-with-spark-and-sparklyr" class="titleslide slide level1"><h1>How to start working with <em>Spark</em> and <em>sparklyr</em>?</h1></section><section id="install-sparklyr" class="slide level2">
 <h1>Install <em>sparklyr</em></h1>
