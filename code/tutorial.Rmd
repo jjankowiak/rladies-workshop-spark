@@ -13,7 +13,7 @@ The typical workflow has three steps:
 2. Do some work,
 3. Disconnect.
 
-```{r, results=FALSE, warning=FALSE, message=FALSE}
+```{r, eval = FALSE, results=FALSE, warning=FALSE, message=FALSE}
 library(sparklyr)
 
 # connect
@@ -34,3 +34,21 @@ spark_disconnect(conn)
 Now we can check if the connection is open using `spark_connection_is_open()` with the name of created connection as its argument.
 
 After our work is done we can close the connection with `spark_disconnect(conn)`.
+
+# Getting data
+
+There are to ways to get data into Spark:
+
+1. reading data directly from a file (e.g. csv)
+2. copying `data.frame` from R
+
+```{r, eval = FALSE, results=FALSE, warning=FALSE, message=FALSE}
+# For this chunk and all following once we assume that the sparklyr library is loaded 
+# and connection to Spark is established
+
+# read data from csv 
+spark_read_csv(conn, )
+
+# copy data.frame from R
+spark_disconnect(conn)
+```
