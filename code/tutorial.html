@@ -148,6 +148,63 @@ spark_disconnect(conn)</code></pre>
 <p>Now we can check if the connection is open using <code>spark_connection_is_open()</code> with the name of created connection as its argument.</p>
 <p>After our work is done we can close the connection with <code>spark_disconnect(conn)</code>.</p>
 </div>
+<div id="getting-data" class="section level1">
+<h1>Getting data</h1>
+<p>There are to ways to get data into Spark:</p>
+<ol style="list-style-type: decimal">
+<li>reading data directly from a file (e.g. csv)</li>
+<li>copying <code>data.frame</code> from R</li>
+</ol>
+<p>Loading data is a slow process - when working with big data we want to avoid copying data from one location to another.</p>
+<pre class="r"><code># For this chunk and all following once we assume that the sparklyr library is loaded 
+# and connection to Spark is established
+
+# read data from csv 
+spark_read_csv(conn, &quot;wine&quot;, &quot;data/wine.csv&quot;)
+
+# copy data.frame from R
+library(MASS) # for dataset Boston
+library(dplyr) # for copy_to() function
+copy_to(conn, Boston, &quot;house_prices&quot;)
+
+# check all available tables stored in Spark
+src_tbls(conn)</code></pre>
+<p>To read data from file we use functions <code>spark_read_*()</code>. They all take three obligatory arguments - a Spark connection, name to assign and path to the file.</p>
+<p>We can also copy data directly from R with <code>dplyr</code>’s <code>copy_to()</code> function which takes connection and local data frame as argument. We can also specify name for new remote table but it is not necessary.</p>
+<p>After loading datasets we can list all tables stored in Spark with <code>src_tbls()</code> function.</p>
+</div>
+<div id="exploring-data" class="section level1">
+<h1>Exploring data</h1>
+<p>In Spark the data is stored in the variable called <code>DataFrame</code> which is more or less the same as R’s <code>data.frame</code>. If we want to explore the data stored in Spark we have to locally create object which has connection to remote data.</p>
+<pre class="r"><code># return tibble object in R
+house_prices_tbl &lt;- tbl(conn, &quot;house_prices&quot;)
+
+# is tibble?
+is.tbl(house_prices_tbl)
+
+# print data (default number of rows = 10)
+print(house_prices_tbl)
+
+# print first 5 rows with the width of 25 characters
+print(house_prices_tbl, width = 25)
+
+# examine the stucture with str() function
+str(house_prices_tbl)
+
+# examine the structure with glimpse() function
+glimpse(house_prices_tbl)
+
+# the size of data stored in R
+object.size(Boston)
+
+# the size of data stored in R as a tibble
+object.size(house_prices_tbl)</code></pre>
+<p>Calling <code>tbl()</code> with a Spark connection and the name of table stored in Spark will create object of type <code>tibble</code>. The tibble object doesn’t keep a copy of the data itself. The <code>print()</code> method uses Spark connection stored in tibble object, copies a piece of the data back to R and displays it. We can manipulate how many rows and columns we want to display by changing arguments <code>n</code> and <code>width</code>. We use <code>glimpse()</code> function to examine the structure of the data, because <code>str()</code> doesn’t know how to retrieve tha data from remote source.</p>
+<p>We can see by analyzing results of <code>object.size()</code> that <code>tribble</code> object is smaller than the same structure stored in R, because it stores only connection to to the romote data, not the data itself.</p>
+</div>
+<div id="manipulating-data-using-dplyr-syntax" class="section level1">
+<h1>Manipulating data using <code>dplyr</code> syntax</h1>
+</div>
 
 
 

@@ -13,7 +13,7 @@ The typical workflow has three steps:
 2. Do some work,
 3. Disconnect.
 
-```{r, eval = FALSE, results=FALSE, warning=FALSE, message=FALSE}
+```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
 library(sparklyr)
 
 # connect
@@ -42,13 +42,61 @@ There are to ways to get data into Spark:
 1. reading data directly from a file (e.g. csv)
 2. copying `data.frame` from R
 
-```{r, eval = FALSE, results=FALSE, warning=FALSE, message=FALSE}
+Loading data is a slow process - when working with big data we want to avoid copying data from one location to another.
+
+```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
 # For this chunk and all following once we assume that the sparklyr library is loaded 
 # and connection to Spark is established
 
 # read data from csv 
-spark_read_csv(conn, )
+spark_read_csv(conn, "wine", "data/wine.csv")
 
 # copy data.frame from R
-spark_disconnect(conn)
+library(MASS) # for dataset Boston
+library(dplyr) # for copy_to() function
+copy_to(conn, Boston, "house_prices")
+
+# check all available tables stored in Spark
+src_tbls(conn)
 ```
+To read data from file we use functions `spark_read_*()`. They all take three obligatory arguments - a Spark connection, name to assign and path to the file.
+
+We can also copy data directly from R with `dplyr`'s `copy_to()` function which takes connection and local data frame as argument. We can also specify name for new remote table but it is not necessary.
+
+After loading datasets we can list all tables stored in Spark with `src_tbls()` function.
+
+# Exploring data
+
+In Spark the data is stored in the variable called `DataFrame` which is more or less the same as R's `data.frame`. If we want to explore the data stored in Spark we have to locally create object which has connection to remote data. 
+
+```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
+# return tibble object in R
+house_prices_tbl <- tbl(conn, "house_prices")
+
+# is tibble?
+is.tbl(house_prices_tbl)
+
+# print data (default number of rows = 10)
+print(house_prices_tbl)
+
+# print first 5 rows with the width of 25 characters
+print(house_prices_tbl, width = 25)
+
+# examine the stucture with str() function
+str(house_prices_tbl)
+
+# examine the structure with glimpse() function
+glimpse(house_prices_tbl)
+
+# the size of data stored in R
+object.size(Boston)
+
+# the size of data stored in R as a tibble
+object.size(house_prices_tbl)
+```
+
+Calling `tbl()` with a Spark connection and the name of table stored in Spark will create object of type `tibble`. The tibble object doesn't keep a copy of the data itself. The `print()` method uses Spark connection stored in tibble object, copies a piece of the data back to R and displays it. We can manipulate how many rows and columns we want to display by changing arguments `n` and `width`. We use `glimpse()` function to examine the structure of the data, because `str()` doesn't know how to retrieve tha data from remote source.
+
+We can see by analyzing results of `object.size()` that `tribble` object is smaller than the same structure stored in R, because it stores only connection to to the romote data, not the data itself.
+
+# Manipulating data using `dplyr` syntax
