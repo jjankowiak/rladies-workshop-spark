@@ -176,7 +176,7 @@ src_tbls(conn)</code></pre>
 <div id="exploring-data" class="section level1">
 <h1>Exploring data</h1>
 <p>In Spark the data is stored in the variable called <code>DataFrame</code> which is more or less the same as R’s <code>data.frame</code>. If we want to explore the data stored in Spark we have to locally create object which has connection to remote data.</p>
-<pre class="r"><code># return tibble object in R
+<pre class="r"><code># create reference to Spark table without loading it into memory
 house_prices_tbl &lt;- tbl(conn, &quot;house_prices&quot;)
 
 # is tibble?
@@ -199,11 +199,40 @@ object.size(Boston)
 
 # the size of data stored in R as a tibble
 object.size(house_prices_tbl)</code></pre>
-<p>Calling <code>tbl()</code> with a Spark connection and the name of table stored in Spark will create object of type <code>tibble</code>. The tibble object doesn’t keep a copy of the data itself. The <code>print()</code> method uses Spark connection stored in tibble object, copies a piece of the data back to R and displays it. We can manipulate how many rows and columns we want to display by changing arguments <code>n</code> and <code>width</code>. We use <code>glimpse()</code> function to examine the structure of the data, because <code>str()</code> doesn’t know how to retrieve tha data from remote source.</p>
-<p>We can see by analyzing results of <code>object.size()</code> that <code>tribble</code> object is smaller than the same structure stored in R, because it stores only connection to to the romote data, not the data itself.</p>
+<p>Calling <code>tbl()</code> with a Spark connection and the name of table stored in Spark will create object of type <code>tibble</code>. The tibble object doesn’t keep a copy of the data itself only reference to it. The <code>print()</code> method uses Spark connection stored in tibble object, copies a piece of the data back to R and displays it. We can manipulate how many rows and columns we want to display by changing arguments <code>n</code> and <code>width</code>. We use <code>glimpse()</code> function to examine the structure of the data, because <code>str()</code> doesn’t know how to retrieve tha data from remote source.</p>
+<p>We can see by analyzing results of <code>object.size()</code> that <code>tibble</code> object is smaller than the same structure stored in R, because it stores only connection to to the romote data, not the data itself.</p>
 </div>
 <div id="manipulating-data-using-dplyr-syntax" class="section level1">
 <h1>Manipulating data using <code>dplyr</code> syntax</h1>
+<p>There are five main actions you can do with data using <code>dplyr</code>:</p>
+<ul>
+<li>select columns</li>
+<li>filter rows</li>
+<li>arrange rows</li>
+<li>change or add columns</li>
+<li>calculate summary statistics</li>
+</ul>
+<p>All operations are performed on tibble objects.</p>
+<div id="select-columns" class="section level2">
+<h2>Select columns</h2>
+<pre class="r"><code># select columns
+# crim - per capita crime rate by town
+# age - proportion of owner-occupied units built prior to 1940
+# medv - median value of owner-occupied homes in 1000$
+house_prices_tbl %&gt;% 
+  select(crim, age, medv)
+
+# note that square bracket indexing is not supported 
+house_prices_tbl[, c(&quot;crim&quot;, &quot;age&quot;, &quot;medv&quot;)]
+
+# choose all but crim, age, medv
+house_prices_tbl %&gt;% 
+  select(-crim, -age, -medv)</code></pre>
+<p>Selecting columns id done by function <code>select()</code> with unquoted names of the columns you want to keep. You can also select columns by excluding some columns, with <code>-</code> before the name.</p>
+</div>
+<div id="filter-rows" class="section level2">
+<h2>Filter rows</h2>
+</div>
 </div>
 
 

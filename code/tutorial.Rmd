@@ -97,6 +97,38 @@ object.size(house_prices_tbl)
 
 Calling `tbl()` with a Spark connection and the name of table stored in Spark will create object of type `tibble`. The tibble object doesn't keep a copy of the data itself only reference to it. The `print()` method uses Spark connection stored in tibble object, copies a piece of the data back to R and displays it. We can manipulate how many rows and columns we want to display by changing arguments `n` and `width`. We use `glimpse()` function to examine the structure of the data, because `str()` doesn't know how to retrieve tha data from remote source.
 
-We can see by analyzing results of `object.size()` that `tribble` object is smaller than the same structure stored in R, because it stores only connection to to the romote data, not the data itself.
+We can see by analyzing results of `object.size()` that `tibble` object is smaller than the same structure stored in R, because it stores only connection to to the romote data, not the data itself.
 
 # Manipulating data using `dplyr` syntax
+
+There are five main actions you can do with data using `dplyr`:
+
+- select columns
+- filter rows
+- arrange rows
+- change or add columns
+- calculate summary statistics
+
+All operations are performed on tibble objects.
+
+## Select columns
+
+```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
+# select columns
+# crim - per capita crime rate by town
+# age - proportion of owner-occupied units built prior to 1940
+# medv - median value of owner-occupied homes in 1000$
+house_prices_tbl %>% 
+  select(crim, age, medv)
+
+# note that square bracket indexing is not supported 
+house_prices_tbl[, c("crim", "age", "medv")]
+
+# choose all but crim, age, medv
+house_prices_tbl %>% 
+  select(-crim, -age, -medv)
+```
+
+Selecting columns id done by function `select()` with unquoted names of the columns you want to keep. You can also select columns by excluding some columns, with `-` before the name.
+
+## Filter rows
