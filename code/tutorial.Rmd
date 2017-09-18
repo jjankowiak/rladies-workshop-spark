@@ -70,7 +70,7 @@ After loading datasets we can list all tables stored in Spark with `src_tbls()` 
 In Spark the data is stored in the variable called `DataFrame` which is more or less the same as R's `data.frame`. If we want to explore the data stored in Spark we have to locally create object which has connection to remote data. 
 
 ```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
-# return tibble object in R
+# create reference to Spark table without loading it into memory
 house_prices_tbl <- tbl(conn, "house_prices")
 
 # is tibble?
@@ -95,7 +95,7 @@ object.size(Boston)
 object.size(house_prices_tbl)
 ```
 
-Calling `tbl()` with a Spark connection and the name of table stored in Spark will create object of type `tibble`. The tibble object doesn't keep a copy of the data itself. The `print()` method uses Spark connection stored in tibble object, copies a piece of the data back to R and displays it. We can manipulate how many rows and columns we want to display by changing arguments `n` and `width`. We use `glimpse()` function to examine the structure of the data, because `str()` doesn't know how to retrieve tha data from remote source.
+Calling `tbl()` with a Spark connection and the name of table stored in Spark will create object of type `tibble`. The tibble object doesn't keep a copy of the data itself only reference to it. The `print()` method uses Spark connection stored in tibble object, copies a piece of the data back to R and displays it. We can manipulate how many rows and columns we want to display by changing arguments `n` and `width`. We use `glimpse()` function to examine the structure of the data, because `str()` doesn't know how to retrieve tha data from remote source.
 
 We can see by analyzing results of `object.size()` that `tribble` object is smaller than the same structure stored in R, because it stores only connection to to the romote data, not the data itself.
 
