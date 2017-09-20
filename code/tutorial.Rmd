@@ -132,3 +132,14 @@ house_prices_tbl %>%
 Selecting columns id done by function `select()` with unquoted names of the columns you want to keep. You can also select columns by excluding some columns, with `-` before the name.
 
 ## Filter rows
+```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
+# filter rows
+# rm - average number of rooms per dwelling > 8
+house_prices_tbl %>% 
+  filter(rm > 8)
+
+# ptratio - pupil-teacher ratio < 15
+# crim - per capita crime rate by town < 0.005
+house_prices_tbl %>% 
+  filter(ptratio < 15, crim < 0.02)
+```
