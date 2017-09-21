@@ -127,9 +127,31 @@ house_prices_tbl[, c("crim", "age", "medv")]
 # choose all but crim, age, medv
 house_prices_tbl %>% 
   select(-crim, -age, -medv)
+
+# select columns between nox and tax
+house_prices_tbl %>% 
+  select(nox:tax)
+
+# select all columns starting from "r"
+house_prices_tbl %>% 
+  select(starts_with("r"))
+
+# select all columns containing "rat" 
+house_prices_tbl %>% 
+  select(contains("rat"))
+
+# select all columns matching regular expression (ends with "s")
+house_prices_tbl %>% 
+  select(matches("s$"))
+
+# select all columns matching regular expression (two "t"s with some letter(s) between)
+house_prices_tbl %>% 
+  select(matches("t.+t"))
 ```
 
 Selecting columns id done by function `select()` with unquoted names of the columns you want to keep. You can also select columns by excluding some columns, with `-` before the name.
+
+Sometimes is easier not to call names of ther columns directly. When we want to select columns which are next to each other we can use them using syntax `name_of_the_column_to_start:name_of_the_column_to_end`. We can also specify the names of columns we want to keep by calling `starts_with()` and `ends_with()` methods which will keep only the columns with the names starting (of ending) with string specified as an argument. Method `contains()` with some string as an argument will keep columns which contain in the name this string. Finally, we can also use regular expressions with the method `matches()` to select specific columns.
 
 ## Filter rows
 ```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
@@ -143,3 +165,49 @@ house_prices_tbl %>%
 house_prices_tbl %>% 
   filter(ptratio < 15, crim < 0.02)
 ```
+
+We can filter the rows by using function `filter()` with logical conditions on the columns as the arguments. The number of operations is limited but we can use comparison, mathematical and logical operators and many mathematical functions such as `log()` or `abs()`.
+
+## Arrange rows
+```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
+# arrange by age in ascending order
+house_prices_tbl %>% 
+  arrange(age)
+
+# arrange by crim in ascending order and by rm in descending order
+house_prices_tbl %>% 
+  arrange(crim, desc(rm))
+```
+
+To arrange rows in specific order we use `arrange()` function. Default sorting is in ascending order but we can use `desc()` method on the column to sort it in descending order.
+
+## Change or add columns
+```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
+# change tax column by multiplying it by 10 000
+house_prices_tbl %>% 
+  mutate(tax = tax * 10000)
+
+# create new column is_cheap which is transformation of medv column
+house_prices_tbl %>% 
+  mutate(is_cheap = ifelse(medv < 25, "cheap", "expensive"))
+
+# create new column crim_medv_ratio which is crim to medv proportion
+house_prices_tbl %>% 
+  mutate(crim_medv_ratio = crim / medv)
+```
+
+Using `mutate()` function allows us to transform existing column or create a new one. The function takes arguments in the form `name_of_the_column = value_of_the_column`. When updating or adding the column you can operate on more than one column to count its value. 
+
+## Calculate summary statistics
+```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
+# calculate mean medv
+house_prices_tbl %>% 
+  summarise(mean_medv = mean(medv))
+
+# calculate min dis and sd of tax
+house_prices_tbl %>% 
+  summarise(min_dis = min(dis), sd_tax = sd(tax))
+```
+`summarise()` function is used to calculate summary of a column (e.g `min()`, `max()` or `mean()` value). The object returned by this function is also a tibble, even if it's only one single value.
+
+

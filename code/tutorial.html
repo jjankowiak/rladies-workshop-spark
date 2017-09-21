@@ -227,11 +227,79 @@ house_prices_tbl[, c(&quot;crim&quot;, &quot;age&quot;, &quot;medv&quot;)]
 
 # choose all but crim, age, medv
 house_prices_tbl %&gt;% 
-  select(-crim, -age, -medv)</code></pre>
+  select(-crim, -age, -medv)
+
+# select columns between nox and tax
+house_prices_tbl %&gt;% 
+  select(nox:tax)
+
+# select all columns starting from &quot;r&quot;
+house_prices_tbl %&gt;% 
+  select(starts_with(&quot;r&quot;))
+
+# select all columns containing &quot;rat&quot; 
+house_prices_tbl %&gt;% 
+  select(contains(&quot;rat&quot;))
+
+# select all columns matching regular expression (ends with &quot;s&quot;)
+house_prices_tbl %&gt;% 
+  select(matches(&quot;s$&quot;))
+
+# select all columns matching regular expression (two &quot;t&quot;s with some letter(s) between)
+house_prices_tbl %&gt;% 
+  select(matches(&quot;t.+t&quot;))</code></pre>
 <p>Selecting columns id done by function <code>select()</code> with unquoted names of the columns you want to keep. You can also select columns by excluding some columns, with <code>-</code> before the name.</p>
+<p>Sometimes is easier not to call names of ther columns directly. When we want to select columns which are next to each other we can use them using syntax <code>name_of_the_column_to_start:name_of_the_column_to_end</code>. We can also specify the names of columns we want to keep by calling <code>starts_with()</code> and <code>ends_with()</code> methods which will keep only the columns with the names starting (of ending) with string specified as an argument. Method <code>contains()</code> with some string as an argument will keep columns which contain in the name this string. Finally, we can also use regular expressions with the method <code>matches()</code> to select specific columns.</p>
 </div>
 <div id="filter-rows" class="section level2">
 <h2>Filter rows</h2>
+<pre class="r"><code># filter rows
+# rm - average number of rooms per dwelling &gt; 8
+house_prices_tbl %&gt;% 
+  filter(rm &gt; 8)
+
+# ptratio - pupil-teacher ratio &lt; 15
+# crim - per capita crime rate by town &lt; 0.005
+house_prices_tbl %&gt;% 
+  filter(ptratio &lt; 15, crim &lt; 0.02)</code></pre>
+<p>We can filter the rows by using function <code>filter()</code> with logical conditions on the columns as the arguments. The number of operations is limited but we can use comparison, mathematical and logical operators and many mathematical functions such as <code>log()</code> or <code>abs()</code>.</p>
+</div>
+<div id="arrange-rows" class="section level2">
+<h2>Arrange rows</h2>
+<pre class="r"><code># arrange by age in ascending order
+house_prices_tbl %&gt;% 
+  arrange(age)
+
+# arrange by crim in ascending order and by rm in descending order
+house_prices_tbl %&gt;% 
+  arrange(crim, desc(rm))</code></pre>
+<p>To arrange rows in specific order we use <code>arrange()</code> function. Default sorting is in ascending order but we can use <code>desc()</code> method on the column to sort it in descending order.</p>
+</div>
+<div id="change-or-add-columns" class="section level2">
+<h2>Change or add columns</h2>
+<pre class="r"><code># change tax column by multiplying it by 10 000
+house_prices_tbl %&gt;% 
+  mutate(tax = tax * 10000)
+
+# create new column is_cheap which is transformation of medv column
+house_prices_tbl %&gt;% 
+  mutate(is_cheap = ifelse(medv &lt; 25, &quot;cheap&quot;, &quot;expensive&quot;))
+
+# create new column crim_medv_ratio which is crim to medv proportion
+house_prices_tbl %&gt;% 
+  mutate(crim_medv_ratio = crim / medv)</code></pre>
+<p>Using <code>mutate()</code> function allows us to transform existing column or create a new one. The function takes arguments in the form <code>name_of_the_column = value_of_the_column</code>. When updating or adding the column you can operate on more than one column to count its value.</p>
+</div>
+<div id="calculate-summary-statistics" class="section level2">
+<h2>Calculate summary statistics</h2>
+<pre class="r"><code># calculate mean medv
+house_prices_tbl %&gt;% 
+  summarise(mean_medv = mean(medv))
+
+# calculate min dis and sd of tax
+house_prices_tbl %&gt;% 
+  summarise(min_dis = min(dis), sd_tax = sd(tax))</code></pre>
+<p><code>summarise()</code> function is used to calculate summary of a column (e.g <code>min()</code>, <code>max()</code> or <code>mean()</code> value). The object returned by this function is also a tibble, even if it’s only one single value.</p>
 </div>
 </div>
 
