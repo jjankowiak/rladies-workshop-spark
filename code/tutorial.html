@@ -301,6 +301,87 @@ house_prices_tbl %&gt;%
   summarise(min_dis = min(dis), sd_tax = sd(tax))</code></pre>
 <p><code>summarise()</code> function is used to calculate summary of a column (e.g <code>min()</code>, <code>max()</code> or <code>mean()</code> value). The object returned by this function is also a tibble, even if it’s only one single value.</p>
 </div>
+<div id="select-distinct-rows" class="section level2">
+<h2>Select distinct rows</h2>
+<pre class="r"><code># select ditinct values for column chas
+house_prices_tbl %&gt;% 
+  distinct(chas)
+
+# select distinct combinations of columns rad and chas
+house_prices_tbl %&gt;% 
+  distinct(rad, chas)</code></pre>
+<p>Function <code>distinct()</code> is especially useful for categorical variables. When we call <code>distinct()</code> with only one column name as an argument we get unique values of this column. Two or more arguments will give us all unique combinations of values of the columns.</p>
+</div>
+<div id="count-unique-combinations" class="section level2">
+<h2>Count unique combinations</h2>
+<pre class="r"><code># count how many of each value from column chas we have
+house_prices_tbl %&gt;% 
+  count(chas)
+
+# count how many combinations of values from columns rad and chas we have
+house_prices_tbl %&gt;% 
+  count(rad, chas, sort = TRUE)
+
+# now take five the most common values of rad
+house_prices_tbl %&gt;% 
+  count(rad, sort = TRUE) %&gt;% 
+  top_n(5)</code></pre>
+<p>If we want to count how many times the specific combinations of values occurs in our dataset we use function <code>count()</code> (with column(s) name(s) as an argument(s)). Additional argument is logical <code>sort</code> value which indicates if the result should be sorted in descending order by number of occurrences. Then we can chain this function with <code>top_n()</code> function to get top the most common combinations.</p>
+<p>See that we can perform few operations one after the other by chaining it. It very useful and practical since usually we need more than one operation to get the desired result.</p>
+</div>
+<div id="group-by-the-same-value" class="section level2">
+<h2>Group by the same value</h2>
+<pre class="r"><code># calculate average mean of medv in each group by rad
+house_prices_tbl %&gt;% 
+  group_by(rad) %&gt;% 
+  summarise(medv_mean = mean(medv))
+
+# mutate age by group-specific normalization (by chas)
+house_prices_tbl %&gt;% 
+  group_by(chas) %&gt;% 
+  mutate(age_norm = (age - mean(age)) / sd(age)) %&gt;% 
+  select(chas, age, age_norm)</code></pre>
+<p>We use <code>group_by()</code> followed by <code>summarise()</code> or <code>mutate()</code> when we want to apply a summary statistic on each group or mutate column with group-specific values (respecively).</p>
+</div>
+<div id="collect-and-compute-data" class="section level2">
+<h2>Collect and compute data</h2>
+<pre class="r"><code># assign results to new tibble
+results &lt;- house_prices_tbl %&gt;% 
+  filter(medv &lt; 10) %&gt;% 
+  count(rad, chas)
+
+# collect the results
+collected &lt;- results %&gt;% collect()
+
+# check class of two objects
+class(results)
+class(collected)
+
+# compute the intermediate results and store in Spark
+house_prices_tbl %&gt;% 
+  filter(medv &lt; 10) %&gt;%
+  compute(&quot;house_prices_filtered&quot;)
+
+# check if new object was created
+src_tbls(conn)</code></pre>
+<p>We already know that tibble stores only a reference to the data, not the data itself. But if we want to move data back to R (for example to plot it) we can use <code>collect()</code> function.</p>
+<p>Copying data between Spark and R is slow, so it should only be performed when really needed. To store the result of intermediate calculations without collecting it we can use <code>compute()</code> function, which compute the calculations and stores the result in Spark. The function takes the string argument which is the name for new variable.</p>
+</div>
+</div>
+<div id="manipulating-data-using-sql-syntax" class="section level1">
+<h1>Manipulating data using SQL syntax</h1>
+<p>The other way to manipulate data in Spark is to use raw SQL syntax. SQL queries are written as strings, and passed to <code>dbGetQuery()</code> from the <code>DBI</code> package. The are two differences when using SQL instead of <code>dplyr</code>:</p>
+<ul>
+<li><code>dbGetQuery()</code> will always execute the query and return the results to R immediately,</li>
+<li>that <code>DBI</code> functions return data.frames rather than tibbles.</li>
+</ul>
+<pre class="r"><code>library(DBI)
+
+# take only nox, rm and age columns and return only 10 first rows
+result &lt;- dbGetQuery(conn, &quot;SELECT nox, rm, age FROM house_prices LIMIT 10&quot;)
+
+# check the class of result object
+class(result)</code></pre>
 </div>
 
 

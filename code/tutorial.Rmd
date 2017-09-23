@@ -210,4 +210,94 @@ house_prices_tbl %>%
 ```
 `summarise()` function is used to calculate summary of a column (e.g `min()`, `max()` or `mean()` value). The object returned by this function is also a tibble, even if it's only one single value.
 
+## Select distinct rows
+```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
+# select ditinct values for column chas
+house_prices_tbl %>% 
+  distinct(chas)
 
+# select distinct combinations of columns rad and chas
+house_prices_tbl %>% 
+  distinct(rad, chas)
+```
+
+Function `distinct()` is especially useful for categorical variables. When we call `distinct()` with only one column name as an argument we get unique values of this column. Two or more arguments will give us all unique combinations of values of the columns.
+
+## Count unique combinations
+```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
+# count how many of each value from column chas we have
+house_prices_tbl %>% 
+  count(chas)
+
+# count how many combinations of values from columns rad and chas we have
+house_prices_tbl %>% 
+  count(rad, chas, sort = TRUE)
+
+# now take five the most common values of rad
+house_prices_tbl %>% 
+  count(rad, sort = TRUE) %>% 
+  top_n(5)
+```
+
+If we want to count how many times the specific combinations of values occurs in our dataset we use function `count()` (with column(s) name(s) as an argument(s)). Additional argument is logical `sort` value which indicates if the result should be sorted in descending order by number of occurrences. Then we can chain this function with `top_n()` function to get top the most common combinations.
+
+See that we can perform few operations one after the other by chaining it. It very useful and practical since usually we need more than one operation to get the desired result.
+
+## Group by the same value
+```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
+# calculate average mean of medv in each group by rad
+house_prices_tbl %>% 
+  group_by(rad) %>% 
+  summarise(medv_mean = mean(medv))
+
+# mutate age by group-specific normalization (by chas)
+house_prices_tbl %>% 
+  group_by(chas) %>% 
+  mutate(age_norm = (age - mean(age)) / sd(age)) %>% 
+  select(chas, age, age_norm)
+```
+
+We use `group_by()` followed by `summarise()` or `mutate()` when we want to apply a summary statistic on each group or mutate column with group-specific values (respecively).
+
+## Collect and compute data
+```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
+# assign results to new tibble
+results <- house_prices_tbl %>% 
+  filter(medv < 10) %>% 
+  count(rad, chas)
+
+# collect the results
+collected <- results %>% collect()
+
+# check class of two objects
+class(results)
+class(collected)
+
+# compute the intermediate results and store in Spark
+house_prices_tbl %>% 
+  filter(medv < 10) %>%
+  compute("house_prices_filtered")
+
+# check if new object was created
+src_tbls(conn)
+```
+We already know that tibble stores only a reference to the data, not the data itself. But if we want to move data back to R (for example to plot it) we can use `collect()` function. 
+
+Copying data between Spark and R is slow, so it should only be performed when really needed. To store the result of intermediate calculations without collecting it we can use `compute()` function, which compute the calculations and stores the result in Spark. The function takes the string argument which is the name for new variable.
+
+# Manipulating data using SQL syntax
+
+The other way to manipulate data in Spark is to use raw SQL syntax. SQL queries are written as strings, and passed to `dbGetQuery()` from the `DBI` package. The are two differences when using SQL instead of `dplyr`:
+
+- `dbGetQuery()` will always execute the query and return the results to R immediately,
+- that `DBI` functions return data.frames rather than tibbles.
+
+```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
+library(DBI)
+
+# take only nox, rm and age columns and return only 10 first rows
+result <- dbGetQuery(conn, "SELECT nox, rm, age FROM house_prices LIMIT 10")
+
+# check the class of result object
+class(result)
+```
