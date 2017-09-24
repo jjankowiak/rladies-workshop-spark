@@ -109,7 +109,7 @@ There are five main actions you can do with data using `dplyr`:
 - change or add columns
 - calculate summary statistics
 
-All operations are performed on tibble objects.
+All operations are performed on tibble objects. The `dplyr` methods use Spark SQL interface (so they actually convert R code into SQL code before passing it to Spark).
 
 ## Select columns
 
@@ -301,3 +301,41 @@ result <- dbGetQuery(conn, "SELECT nox, rm, age FROM house_prices LIMIT 10")
 # check the class of result object
 class(result)
 ```
+
+# Machine learning techniques
+
+In addition  to `dplyr` interface `sparklyr` contains also the interface which supports access to Spark machine learning library - MLlib. It has two types of functions 
+
+1. `ft_*` - feature transpormation functions
+2. `ml_*` - machine learning functions
+
+It calls Java or Scala code to access Spark libraries directly, without any conversion to SQL and that's why it is more flexible. 
+
+## ML transformers
+
+All the sparklyr feature transformation functions have a similar user interface. The first three arguments are always a Spark tibble, a string naming the input column, and a string naming the output column:
+
+```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
+a_tibble %>%
+  ft_some_transformation("x", "y", some_other_args)
+```
+
+### Transform continuous variable to binary
+
+```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
+# convert continuous column into logical
+house_prices_tbl %>% 
+  ft_binarizer("age", "is_old", 50)
+
+# when collecting to R
+collected <- house_prices_tbl %>% 
+  ft_binarizer("age", "is_old", 50) %>% 
+  collect() %>% 
+  mutate(is_old = as.logical(is_old))
+```
+
+`ft_binarizer()` function converts continuous variable into logical. The additional argument (referred above as `some_other_args`) is threshold - the number which splits the scale into 0 and 1 values.
+
+It's important to note that the column after transformation consists of DoubleType values so when you collect data back into R you have to transform this column to logical.
+
+### Transform continuous variable to caterogical

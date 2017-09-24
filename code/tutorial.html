@@ -212,7 +212,7 @@ object.size(house_prices_tbl)</code></pre>
 <li>change or add columns</li>
 <li>calculate summary statistics</li>
 </ul>
-<p>All operations are performed on tibble objects.</p>
+<p>All operations are performed on tibble objects. The <code>dplyr</code> methods use Spark SQL interface (so they actually convert R code into SQL code before passing it to Spark).</p>
 <div id="select-columns" class="section level2">
 <h2>Select columns</h2>
 <pre class="r"><code># select columns
@@ -382,6 +382,38 @@ result &lt;- dbGetQuery(conn, &quot;SELECT nox, rm, age FROM house_prices LIMIT 
 
 # check the class of result object
 class(result)</code></pre>
+</div>
+<div id="machine-learning-techniques" class="section level1">
+<h1>Machine learning techniques</h1>
+<p>In addition to <code>dplyr</code> interface <code>sparklyr</code> contains also the interface which supports access to Spark machine learning library - MLlib. It has two types of functions</p>
+<ol style="list-style-type: decimal">
+<li><code>ft_*</code> - feature transpormation functions</li>
+<li><code>ml_*</code> - machine learning functions</li>
+</ol>
+<p>It calls Java or Scala code to access Spark libraries directly, without any conversion to SQL and that’s why it is more flexible.</p>
+<div id="ml-transformers" class="section level2">
+<h2>ML transformers</h2>
+<p>All the sparklyr feature transformation functions have a similar user interface. The first three arguments are always a Spark tibble, a string naming the input column, and a string naming the output column:</p>
+<pre class="r"><code>a_tibble %&gt;%
+  ft_some_transformation(&quot;x&quot;, &quot;y&quot;, some_other_args)</code></pre>
+<div id="transform-continuous-variable-to-binary" class="section level3">
+<h3>Transform continuous variable to binary</h3>
+<pre class="r"><code># convert continuous column into logical
+house_prices_tbl %&gt;% 
+  ft_binarizer(&quot;age&quot;, &quot;is_old&quot;, 50)
+
+# when collecting to R
+collected &lt;- house_prices_tbl %&gt;% 
+  ft_binarizer(&quot;age&quot;, &quot;is_old&quot;, 50) %&gt;% 
+  collect() %&gt;% 
+  mutate(is_old = as.logical(is_old))</code></pre>
+<p><code>ft_binarizer()</code> function converts continuous variable into logical. The additional argument (referred above as <code>some_other_args</code>) is threshold - the number which splits the scale into 0 and 1 values.</p>
+<p>It’s important to note that the column after transformation consists of DoubleType values so when you collect data back into R you have to transform this column to logical.</p>
+</div>
+<div id="transform-continuous-variable-to-caterogical" class="section level3">
+<h3>Transform continuous variable to caterogical</h3>
+</div>
+</div>
 </div>
 
 
