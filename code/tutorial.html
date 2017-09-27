@@ -412,8 +412,37 @@ collected &lt;- house_prices_tbl %&gt;%
 </div>
 <div id="transform-continuous-variable-to-caterogical" class="section level3">
 <h3>Transform continuous variable to caterogical</h3>
+<pre class="r"><code># convert continuous column into categorical
+# [0, 20) - 0, [20, 40) - 1, [40, 60) - 2 ...
+house_prices_tbl %&gt;% 
+  ft_bucketizer(&quot;age&quot;, &quot;age_level&quot;, splits = c(0, 20, 40, 60, 80, Inf))
+
+# when collecting to R
+splits &lt;- c(0, 20, 40, 60, 80, Inf)
+collected &lt;- house_prices_tbl %&gt;% 
+  ft_bucketizer(&quot;age&quot;, &quot;age_level&quot;, splits = splits) %&gt;% 
+  collect() %&gt;% 
+  mutate(age_level = factor(age_level))
+
+# convert continuous column into categorical by quantiles
+house_prices_tbl %&gt;%
+  ft_bucketizer(&quot;age&quot;, &quot;age_level&quot;, splits = c(0, 20, 40, 60, 80, Inf)) %&gt;% 
+  ft_quantile_discretizer(&quot;age&quot;, &quot;age_level_q&quot;, n.buckets = 5)</code></pre>
+<p><code>ft_bucketizer()</code> is similar to <code>cut()</code> function in basic R - it splits continuous variable into bins. This time, instead for one threshold (as in <code>ft_binarizer()</code>) we pass vector of thresholds.</p>
+<p>The function returns a numeric vector, so if you want to work on the results in R, you need to convert it to a factor.</p>
+<p>When we want cut the continuous variable into buckets by quantiles we use <code>ft_quantile_discretizer()</code> function. Using the argument <code>n.buckets</code> we can determine number of buckets we want.</p>
 </div>
 </div>
+<div id="sql-transformer" class="section level2">
+<h2>SQL transformer ???</h2>
+<p>ft_sql_transformer</p>
+</div>
+</div>
+<div id="ml" class="section level1">
+<h1>ML</h1>
+</div>
+<div id="flow-od-poczatku-do-konca" class="section level1">
+<h1>flow od początku do końca</h1>
 </div>
 
 

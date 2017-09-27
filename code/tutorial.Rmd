@@ -339,3 +339,33 @@ collected <- house_prices_tbl %>%
 It's important to note that the column after transformation consists of DoubleType values so when you collect data back into R you have to transform this column to logical.
 
 ### Transform continuous variable to caterogical
+```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
+# convert continuous column into categorical
+# [0, 20) - 0, [20, 40) - 1, [40, 60) - 2 ...
+house_prices_tbl %>% 
+  ft_bucketizer("age", "age_level", splits = c(0, 20, 40, 60, 80, Inf))
+
+# when collecting to R
+splits <- c(0, 20, 40, 60, 80, Inf)
+collected <- house_prices_tbl %>% 
+  ft_bucketizer("age", "age_level", splits = splits) %>% 
+  collect() %>% 
+  mutate(age_level = factor(age_level))
+
+# convert continuous column into categorical by quantiles
+house_prices_tbl %>%
+  ft_bucketizer("age", "age_level", splits = c(0, 20, 40, 60, 80, Inf)) %>% 
+  ft_quantile_discretizer("age", "age_level_q", n.buckets = 5)
+```
+`ft_bucketizer()` is similar to  `cut()` function in basic R - it splits continuous variable into bins. This time, instead for one threshold (as in `ft_binarizer()`) we pass vector of thresholds.
+
+The function returns a numeric vector, so if you want to work on the results in R, you need to convert it to a factor.
+
+When we want cut the continuous variable into buckets by quantiles we use `ft_quantile_discretizer()` function. Using the argument `n.buckets` we can determine number of buckets we want.
+
+## SQL transformer ???
+ft_sql_transformer
+
+# ML
+
+# flow od początku do końca
