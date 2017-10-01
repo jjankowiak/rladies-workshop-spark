@@ -304,14 +304,17 @@ class(result)
 
 # Machine learning techniques
 
-In addition  to `dplyr` interface `sparklyr` contains also the interface which supports access to Spark machine learning library - MLlib. It has two types of functions 
+In addition  to `dplyr` interface `sparklyr` contains also the interface which supports access to Spark machine learning library - MLlib. It provides three families of functions that you can use with Spark machine learning:
 
-1. `ft_*` - feature transpormation functions
-2. `ml_*` - machine learning functions
+- machine learning algorithms for analyzing data (`ml_*`)
+- feature transformers for manipulating individual features (`ft_*`)
+- functions for manipulating Spark DataFrames (`sdf_*`)
 
 It calls Java or Scala code to access Spark libraries directly, without any conversion to SQL and that's why it is more flexible. 
 
 ## ML transformers
+
+A model is often fit not on a dataset as-is, but instead on some transformation of that dataset. Spark provides feature transformers, facilitating many common transformations of data within a Spark DataFrame, and sparklyr exposes these within the `ft_*()` family of functions. These routines generally take one or more input columns, and generate a new output column formed as a transformation of those columns.
 
 All the sparklyr feature transformation functions have a similar user interface. The first three arguments are always a Spark tibble, a string naming the input column, and a string naming the output column:
 
@@ -363,9 +366,132 @@ The function returns a numeric vector, so if you want to work on the results in 
 
 When we want cut the continuous variable into buckets by quantiles we use `ft_quantile_discretizer()` function. Using the argument `n.buckets` we can determine number of buckets we want.
 
-## SQL transformer ???
-ft_sql_transformer
+### Transform a data using SQL
+```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
+# use SQL query with ft_sql_transformer() function
+# we get the same result as from the `dbGetQuery()` function
+result <- house_prices_tbl %>% 
+  ft_sql_transformer("SELECT nox, rm, age FROM house_prices LIMIT 10")
 
-# ML
+# this is still tibble!
+class(result)
+```
+Another way to use SQL when manipulating the data is to simply use `ft_sql_transformer()` function. There's no need to use `DBI` package any more since we have the same functionality in `spraklyr` package.
 
-# flow od początku do końca
+The difference between the two functions is that the function from `sparklyr` packages will return tibble object, not a data frame.
+
+## Split data to training and test set
+```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
+# split data on training and testing set
+train_test <- house_prices_tbl %>% 
+  sdf_partition(training = 0.7, testing = 0.3)
+
+# you can split data set into more than two sets!
+# if the fractions don't add up to one they will be scaled
+house_prices_tbl %>% 
+  sdf_partition(set_a = 0.3, set_b = 0.3, set_c = 0.6)
+
+# use indexing operator to access the subset
+training_tbl <- train_test$training
+testing_tbl <- train_test[["testing"]]
+```
+
+Before the modeling we have to split our data set into training and testing sets. We fit the model on the training set and test the model predictions against the testing set. `sdf_partition()` function provides a way of partitioning your data frame into training and testing sets. We can use any set names and we can split data set into more than two subsets.
+
+The return value is a list of tibble.
+
+## Machine learning functions
+
+The `ml_*()` functions take the arguments `response` and `features`. But `features` can also be a formula with main effects. The intercept term can be omitted by using -1.
+
+```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
+# equivalent statements
+ml_linear_regression(z ~ -1 + x + y)
+ml_linear_regression(intercept = FALSE, response = "z", features = c("x", "y"))
+```
+
+### Linear regression
+```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
+# create formula
+ml_formula <- formula(medv ~ crim + age)
+# train linear regression model
+model <- ml_linear_regression(training_tbl, ml_formula)
+```
+Use Spark’s linear regression to model the linear relationship between a response variable and one or more explanatory variables.
+
+### Logistic regression
+Perform logistic regression on a Spark DataFrame.
+```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
+# create formula
+ml_formula <- formula(chas ~ crim + age)
+# train logistic regression model
+model <- ml_logistic_regression(training_tbl, ml_formula)
+```
+
+### Decision tree
+
+ml_decision_tree( x, response, features, max.bins = 32L, max.depth
+= 5L, type = c("auto", "regression", "classification"), ml.options =
+ml_options() ) Same options for: ml_gradient_boosted_trees
+
+Perform regression or classification using decision trees.
+```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
+# create formula
+ml_formula <- formula(chas ~ crim + age)
+# train logistic regression model
+model <- ml_decision_tree(training_tbl, ml_formula)
+```
+
+### Random forests
+Use Spark’s Random Forest to perform regression or multiclass classification.
+
+ml_random_forest( x, response, features, max.bins = 32L,
+max.depth = 5L, num.trees = 20L, type = c("auto", "regression",
+"classification"), ml.options = ml_options() )
+
+```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
+# create formula
+ml_formula <- formula(chas ~ crim + age)
+# train logistic regression model
+model <- ml_random_forest(training_tbl, ml_formula)
+```
+
+### Utilities
+
+```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
+# create formula
+ml_formula <- formula(chas ~ crim + age)
+# train logistic regression model
+model <- ml_random_forest(training_tbl, ml_formula)
+# feature importance
+ml_tree_feature_importance(conn, model)
+
+# evaluation
+ml_classification_eval()
+
+ml_binary_classification_eval( predicted_tbl_spark, label, score,
+metric = "areaUnderROC" )
+ml_classification_eval( predicted_tbl_spark, label, predicted_lbl,
+metric = "f1" )
+```
+Functions for interacting with Spark ML model fits.
+
+- ml_binary_classification_eval	- Calculates the area under the curve for a binary classification model.
+- ml_classification_eval -	Calculates performance metrics (i.e. f1, precision, recall, weightedPrecision, weightedRecall, and accuracy) for binary and multiclass classification model.
+- ml_tree_feature_importance -	Calculates variable importance for decision trees (i.e. decision trees, random forests, gradient boosted trees).
+
+## Working workflow
+
+An analytic workflow with `sparklyr` might be composed of the following stages. For an example see Example Workflow:
+
+- perform SQL queries through the sparklyr dplyr interface,
+- use the `sdf_*()` and `ft_*()` family of functions to generate new columns, or partition your data set,
+- choose an appropriate machine learning algorithm from the `ml_*()` family of functions to model your data,
+- inspect the quality of your model fit, and use it to make predictions with new data.
+- collect the results for visualization and further analysis in R
+
+# Sources
+
+- https://spark.rstudio.com/index.html
+- https://www.datacamp.com/courses/introduction-to-spark-in-r-using-sparklyr
+- https://beta.rstudioconnect.com/content/1518/notebook-classification.html

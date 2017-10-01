@@ -385,14 +385,16 @@ class(result)</code></pre>
 </div>
 <div id="machine-learning-techniques" class="section level1">
 <h1>Machine learning techniques</h1>
-<p>In addition to <code>dplyr</code> interface <code>sparklyr</code> contains also the interface which supports access to Spark machine learning library - MLlib. It has two types of functions</p>
-<ol style="list-style-type: decimal">
-<li><code>ft_*</code> - feature transpormation functions</li>
-<li><code>ml_*</code> - machine learning functions</li>
-</ol>
+<p>In addition to <code>dplyr</code> interface <code>sparklyr</code> contains also the interface which supports access to Spark machine learning library - MLlib. It provides three families of functions that you can use with Spark machine learning:</p>
+<ul>
+<li>machine learning algorithms for analyzing data (<code>ml_*</code>)</li>
+<li>feature transformers for manipulating individual features (<code>ft_*</code>)</li>
+<li>functions for manipulating Spark DataFrames (<code>sdf_*</code>)</li>
+</ul>
 <p>It calls Java or Scala code to access Spark libraries directly, without any conversion to SQL and that’s why it is more flexible.</p>
 <div id="ml-transformers" class="section level2">
 <h2>ML transformers</h2>
+<p>A model is often fit not on a dataset as-is, but instead on some transformation of that dataset. Spark provides feature transformers, facilitating many common transformations of data within a Spark DataFrame, and sparklyr exposes these within the <code>ft_*()</code> family of functions. These routines generally take one or more input columns, and generate a new output column formed as a transformation of those columns.</p>
 <p>All the sparklyr feature transformation functions have a similar user interface. The first three arguments are always a Spark tibble, a string naming the input column, and a string naming the output column:</p>
 <pre class="r"><code>a_tibble %&gt;%
   ft_some_transformation(&quot;x&quot;, &quot;y&quot;, some_other_args)</code></pre>
@@ -432,17 +434,119 @@ house_prices_tbl %&gt;%
 <p>The function returns a numeric vector, so if you want to work on the results in R, you need to convert it to a factor.</p>
 <p>When we want cut the continuous variable into buckets by quantiles we use <code>ft_quantile_discretizer()</code> function. Using the argument <code>n.buckets</code> we can determine number of buckets we want.</p>
 </div>
+<div id="transform-a-data-using-sql" class="section level3">
+<h3>Transform a data using SQL</h3>
+<pre class="r"><code># use SQL query with ft_sql_transformer() function
+# we get the same result as from the `dbGetQuery()` function
+result &lt;- house_prices_tbl %&gt;% 
+  ft_sql_transformer(&quot;SELECT nox, rm, age FROM house_prices LIMIT 10&quot;)
+
+# this is still tibble!
+class(result)</code></pre>
+<p>Another way to use SQL when manipulating the data is to simply use <code>ft_sql_transformer()</code> function. There’s no need to use <code>DBI</code> package any more since we have the same functionality in <code>spraklyr</code> package.</p>
+<p>The difference between the two functions is that the function from <code>sparklyr</code> packages will return tibble object, not a data frame.</p>
 </div>
-<div id="sql-transformer" class="section level2">
-<h2>SQL transformer ???</h2>
-<p>ft_sql_transformer</p>
+</div>
+<div id="split-data-to-training-and-test-set" class="section level2">
+<h2>Split data to training and test set</h2>
+<pre class="r"><code># split data on training and testing set
+train_test &lt;- house_prices_tbl %&gt;% 
+  sdf_partition(training = 0.7, testing = 0.3)
+
+# you can split data set into more than two sets!
+# if the fractions don't add up to one they will be scaled
+house_prices_tbl %&gt;% 
+  sdf_partition(set_a = 0.3, set_b = 0.3, set_c = 0.6)
+
+# use indexing operator to access the subset
+training_tbl &lt;- train_test$training
+testing_tbl &lt;- train_test[[&quot;testing&quot;]]</code></pre>
+<p>Before the modeling we have to split our data set into training and testing sets. We fit the model on the training set and test the model predictions against the testing set. <code>sdf_partition()</code> function provides a way of partitioning your data frame into training and testing sets. We can use any set names and we can split data set into more than two subsets.</p>
+<p>The return value is a list of tibble.</p>
+</div>
+<div id="machine-learning-functions" class="section level2">
+<h2>Machine learning functions</h2>
+<p>The <code>ml_*()</code> functions take the arguments <code>response</code> and <code>features</code>. But <code>features</code> can also be a formula with main effects. The intercept term can be omitted by using -1.</p>
+<pre class="r"><code># equivalent statements
+ml_linear_regression(z ~ -1 + x + y)
+ml_linear_regression(intercept = FALSE, response = &quot;z&quot;, features = c(&quot;x&quot;, &quot;y&quot;))</code></pre>
+<div id="linear-regression" class="section level3">
+<h3>Linear regression</h3>
+<pre class="r"><code># create formula
+ml_formula &lt;- formula(medv ~ crim + age)
+# train linear regression model
+model &lt;- ml_linear_regression(training_tbl, ml_formula)</code></pre>
+<p>Use Spark’s linear regression to model the linear relationship between a response variable and one or more explanatory variables.</p>
+</div>
+<div id="logistic-regression" class="section level3">
+<h3>Logistic regression</h3>
+<p>Perform logistic regression on a Spark DataFrame.</p>
+<pre class="r"><code># create formula
+ml_formula &lt;- formula(chas ~ crim + age)
+# train logistic regression model
+model &lt;- ml_logistic_regression(training_tbl, ml_formula)</code></pre>
+</div>
+<div id="decision-tree" class="section level3">
+<h3>Decision tree</h3>
+<p>ml_decision_tree( x, response, features, max.bins = 32L, max.depth = 5L, type = c(“auto”, “regression”, “classification”), ml.options = ml_options() ) Same options for: ml_gradient_boosted_trees</p>
+<p>Perform regression or classification using decision trees.</p>
+<pre class="r"><code># create formula
+ml_formula &lt;- formula(chas ~ crim + age)
+# train logistic regression model
+model &lt;- ml_decision_tree(training_tbl, ml_formula)</code></pre>
+</div>
+<div id="random-forests" class="section level3">
+<h3>Random forests</h3>
+<p>Use Spark’s Random Forest to perform regression or multiclass classification.</p>
+<p>ml_random_forest( x, response, features, max.bins = 32L, max.depth = 5L, num.trees = 20L, type = c(“auto”, “regression”, “classification”), ml.options = ml_options() )</p>
+<pre class="r"><code># create formula
+ml_formula &lt;- formula(chas ~ crim + age)
+# train logistic regression model
+model &lt;- ml_random_forest(training_tbl, ml_formula)</code></pre>
+</div>
+<div id="utilities" class="section level3">
+<h3>Utilities</h3>
+<pre class="r"><code># create formula
+ml_formula &lt;- formula(chas ~ crim + age)
+# train logistic regression model
+model &lt;- ml_random_forest(training_tbl, ml_formula)
+# feature importance
+ml_tree_feature_importance(conn, model)
+
+# evaluation
+ml_classification_eval()
+
+ml_binary_classification_eval( predicted_tbl_spark, label, score,
+metric = &quot;areaUnderROC&quot; )
+ml_classification_eval( predicted_tbl_spark, label, predicted_lbl,
+metric = &quot;f1&quot; )</code></pre>
+<p>Functions for interacting with Spark ML model fits.</p>
+<ul>
+<li>ml_binary_classification_eval - Calculates the area under the curve for a binary classification model.</li>
+<li>ml_classification_eval - Calculates performance metrics (i.e. f1, precision, recall, weightedPrecision, weightedRecall, and accuracy) for binary and multiclass classification model.</li>
+<li>ml_tree_feature_importance - Calculates variable importance for decision trees (i.e. decision trees, random forests, gradient boosted trees).</li>
+</ul>
 </div>
 </div>
-<div id="ml" class="section level1">
-<h1>ML</h1>
+<div id="working-workflow" class="section level2">
+<h2>Working workflow</h2>
+<p>An analytic workflow with <code>sparklyr</code> might be composed of the following stages. For an example see Example Workflow:</p>
+<ul>
+<li>perform SQL queries through the sparklyr dplyr interface,</li>
+<li>use the <code>sdf_*()</code> and <code>ft_*()</code> family of functions to generate new columns, or partition your data set,</li>
+<li>choose an appropriate machine learning algorithm from the <code>ml_*()</code> family of functions to model your data,</li>
+<li>inspect the quality of your model fit, and use it to make predictions with new data.</li>
+<li>collect the results for visualization and further analysis in R</li>
+</ul>
 </div>
-<div id="flow-od-poczatku-do-konca" class="section level1">
-<h1>flow od początku do końca</h1>
+</div>
+<div id="sources" class="section level1">
+<h1>Sources</h1>
+<ul>
+<li><a href="https://spark.rstudio.com/index.html" class="uri">https://spark.rstudio.com/index.html</a></li>
+<li><a href="https://www.datacamp.com/courses/introduction-to-spark-in-r-using-sparklyr" class="uri">https://www.datacamp.com/courses/introduction-to-spark-in-r-using-sparklyr</a></li>
+<li><a href="https://beta.rstudioconnect.com/content/1518/notebook-classification.html" class="uri">https://beta.rstudioconnect.com/content/1518/notebook-classification.html</a></li>
+</ul>
 </div>
 
 
