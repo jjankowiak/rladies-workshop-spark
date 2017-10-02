@@ -49,7 +49,7 @@ Loading data is a slow process - when working with big data we want to avoid cop
 # and connection to Spark is established
 
 # read data from csv 
-spark_read_csv(conn, "wine", "data/wine.csv")
+spark_read_csv(conn, "titanic", "data/titanic.csv")
 
 # copy data.frame from R
 library(MASS) # for dataset Boston
@@ -326,15 +326,23 @@ a_tibble %>%
 ### Transform continuous variable to binary
 
 ```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
+# creating tibble for new dataset
+iris <- iris
+copy_to(conn, iris, "iris")
+iris_tbl <- tbl(conn, "iris")
+
+# be careful - dots in the columns' names have been replaced by underscores!
+glimpse(iris_tbl)
+
 # convert continuous column into logical
-house_prices_tbl %>% 
-  ft_binarizer("age", "is_old", 50)
+iris_tbl %>% 
+  ft_binarizer("Petal_Length", "petal_is_long", 4)
 
 # when collecting to R
-collected <- house_prices_tbl %>% 
-  ft_binarizer("age", "is_old", 50) %>% 
+collected <- iris_tbl %>% 
+  ft_binarizer("Petal_Length", "petal_is_long", 4) %>% 
   collect() %>% 
-  mutate(is_old = as.logical(is_old))
+  mutate(petal_is_long = as.logical(petal_is_long))
 ```
 
 `ft_binarizer()` function converts continuous variable into logical. The additional argument (referred above as `some_other_args`) is threshold - the number which splits the scale into 0 and 1 values.
@@ -344,21 +352,21 @@ It's important to note that the column after transformation consists of DoubleTy
 ### Transform continuous variable to caterogical
 ```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
 # convert continuous column into categorical
-# [0, 20) - 0, [20, 40) - 1, [40, 60) - 2 ...
-house_prices_tbl %>% 
-  ft_bucketizer("age", "age_level", splits = c(0, 20, 40, 60, 80, Inf))
+# [0, 5) - 0, [5, 6) - 1, [6, 7) - 2 ...
+iris_tbl %>% 
+  ft_bucketizer("Sepal_Length", "sepal_length_level", splits = c(0, 5, 6, 7, Inf))
 
 # when collecting to R
-splits <- c(0, 20, 40, 60, 80, Inf)
-collected <- house_prices_tbl %>% 
-  ft_bucketizer("age", "age_level", splits = splits) %>% 
+splits <- c(0, 5, 6, 7, Inf)
+collected <- iris_tbl %>% 
+  ft_bucketizer("Sepal_Length", "sepal_length_level", splits = splits) %>% 
   collect() %>% 
-  mutate(age_level = factor(age_level))
+  mutate(sepal_length_level = factor(sepal_length_level))
 
 # convert continuous column into categorical by quantiles
-house_prices_tbl %>%
-  ft_bucketizer("age", "age_level", splits = c(0, 20, 40, 60, 80, Inf)) %>% 
-  ft_quantile_discretizer("age", "age_level_q", n.buckets = 5)
+iris_tbl %>%
+  ft_bucketizer("Sepal_Length", "sepal_length_level", splits = c(0, 5, 6, 7, Inf)) %>% 
+  ft_quantile_discretizer("Sepal_Length", "sepal_length_level_q", n.buckets = 4)
 ```
 `ft_bucketizer()` is similar to  `cut()` function in basic R - it splits continuous variable into bins. This time, instead for one threshold (as in `ft_binarizer()`) we pass vector of thresholds.
 
@@ -370,8 +378,8 @@ When we want cut the continuous variable into buckets by quantiles we use `ft_qu
 ```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
 # use SQL query with ft_sql_transformer() function
 # we get the same result as from the `dbGetQuery()` function
-result <- house_prices_tbl %>% 
-  ft_sql_transformer("SELECT nox, rm, age FROM house_prices LIMIT 10")
+result <- iris_tbl %>% 
+  ft_sql_transformer("SELECT Sepal_Length, Sepal_width FROM iris WHERE Petal_Width < 1 LIMIT 10")
 
 # this is still tibble!
 class(result)
@@ -383,12 +391,12 @@ The difference between the two functions is that the function from `sparklyr` pa
 ## Split data to training and test set
 ```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
 # split data on training and testing set
-train_test <- house_prices_tbl %>% 
+train_test <- iris_tbl %>% 
   sdf_partition(training = 0.7, testing = 0.3)
 
 # you can split data set into more than two sets!
 # if the fractions don't add up to one they will be scaled
-house_prices_tbl %>% 
+iris_tbl %>% 
   sdf_partition(set_a = 0.3, set_b = 0.3, set_c = 0.6)
 
 # use indexing operator to access the subset
@@ -402,7 +410,7 @@ The return value is a list of tibble.
 
 ## Machine learning functions
 
-The `ml_*()` functions take the arguments `response` and `features`. But `features` can also be a formula with main effects. The intercept term can be omitted by using -1.
+The `ml_*()` functions take the arguments `response` and `features`. But `features` can also be a formula with main effects. The intercept term can be omitted by using -1. Check in help all available arguments for a specific function.
 
 ```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
 # equivalent statements
@@ -412,57 +420,95 @@ ml_linear_regression(intercept = FALSE, response = "z", features = c("x", "y"))
 
 ### Linear regression
 ```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
-# create formula
-ml_formula <- formula(medv ~ crim + age)
 # train linear regression model
-model <- ml_linear_regression(training_tbl, ml_formula)
+model_lr <- training_tbl %>% 
+  select(Petal_Width, Petal_Length) %>%
+  ml_linear_regression(Petal_Length ~ Petal_Width)
+
+# check model summary
+summary(model_lr)
+
+# how well the model fits?
+library(ggplot2)
+iris_tbl %>%
+  select(Petal_Width, Petal_Length) %>%
+  collect %>%
+  ggplot(aes(Petal_Length, Petal_Width)) +
+    geom_point(aes(Petal_Width, Petal_Length)) +
+    geom_abline(aes(slope = coef(model_lr)[2], intercept = coef(model_lr)[1]), color = "red") +
+    labs(x = "Petal Width", y = "Petal Length")
 ```
 Use Spark’s linear regression to model the linear relationship between a response variable and one or more explanatory variables.
 
 ### Logistic regression
-Perform logistic regression on a Spark DataFrame.
+
 ```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
-# create formula
-ml_formula <- formula(chas ~ crim + age)
+# prepare dataset - iris but only with two classes
+iris2_tbl <- iris_tbl %>% 
+  filter(Species != "virginica")
+
+train_test2 <- iris2_tbl %>% 
+  sdf_partition(training = 0.7, testing = 0.3)
+
+training2_tbl <- train_test2$training
+testing2_tbl <- train_test2$testing
+
 # train logistic regression model
-model <- ml_logistic_regression(training_tbl, ml_formula)
+model_logr <- training2_tbl %>%
+  ml_logistic_regression(Species ~ Petal_Length + Petal_Width)
+
+# check model summary
+summary(model_logr)
+
+# predict classes for testing set
+pred <- sdf_predict(model_logr, testing2_tbl) %>% 
+  ft_string_indexer("Species", "Species_inx")
+ml_binary_classification_eval(pred, "Species_inx", "probability", metric = "areaUnderROC" )
 ```
+
+Use Spark’s logistic regression to perform logistic regression, modeling a binary outcome as a function of one or more explanatory variables.
 
 ### Decision tree
+```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
+# train decision tree model
+model_dt <- training_tbl %>%
+  ml_decision_tree(Species ~ Petal_Length + Petal_Width)
 
-ml_decision_tree( x, response, features, max.bins = 32L, max.depth
-= 5L, type = c("auto", "regression", "classification"), ml.options =
-ml_options() ) Same options for: ml_gradient_boosted_trees
+# predict classes for testing dataset
+predict_dt <- sdf_predict(model_dt, testing_tbl) %>%
+  ft_string_indexer("Species", "Species_idx") %>%
+  collect
+
+# compare predicted classes with real classess
+table(predict_dt$Species_idx, predict_dt$prediction)
+
+# feature importance
+ml_tree_feature_importance(conn, model_dt)
+```
 
 Perform regression or classification using decision trees.
-```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
-# create formula
-ml_formula <- formula(chas ~ crim + age)
-# train logistic regression model
-model <- ml_decision_tree(training_tbl, ml_formula)
-```
 
 ### Random forests
 Use Spark’s Random Forest to perform regression or multiclass classification.
 
-ml_random_forest( x, response, features, max.bins = 32L,
-max.depth = 5L, num.trees = 20L, type = c("auto", "regression",
-"classification"), ml.options = ml_options() )
-
 ```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
-# create formula
-ml_formula <- formula(chas ~ crim + age)
-# train logistic regression model
-model <- ml_random_forest(training_tbl, ml_formula)
+# train random forest model
+model_rf <- training_tbl %>%
+  ml_random_forest(Species ~ Petal_Length + Petal_Width, type = "classification")
+
+# predict classes for testing dataset
+predict_rf <- sdf_predict(model_rf, testing_tbl) %>%
+  ft_string_indexer("Species", "Species_idx") %>%
+  collect
+
+# compare predicted classes with real classess
+ml_classification_eval()
 ```
 
 ### Utilities
 
 ```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
-# create formula
-ml_formula <- formula(chas ~ crim + age)
-# train logistic regression model
-model <- ml_random_forest(training_tbl, ml_formula)
+
 # feature importance
 ml_tree_feature_importance(conn, model)
 
@@ -495,3 +541,11 @@ An analytic workflow with `sparklyr` might be composed of the following stages. 
 - https://spark.rstudio.com/index.html
 - https://www.datacamp.com/courses/introduction-to-spark-in-r-using-sparklyr
 - https://beta.rstudioconnect.com/content/1518/notebook-classification.html
+
+# TODO:
+zamiast iris_tbl powinno chyba byc trainig_tbl
+Doda ft_string_indexer!
+logistic regression zrobic na iris ale ograniczyc sie tylko do dwoch klas
+random forest i dt - prediction jak zroboc zeby tabelka byla ok
+ft_indexer zrobić przed podziałem na test i tren
+titanic do workflow
