@@ -374,6 +374,14 @@ The function returns a numeric vector, so if you want to work on the results in 
 
 When we want cut the continuous variable into buckets by quantiles we use `ft_quantile_discretizer()` function. Using the argument `n.buckets` we can determine number of buckets we want.
 
+### Encode character column into numerical column
+```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
+iris_tbl %>% 
+  ft_string_indexer("Species", "species_inx")
+```
+
+Some machine learning algorithms require numerical columns instead of string columns. That's why function `ft_string_indexer()` is very useful. It encodes a column of labels into a column of label indices. The indices are in [0, numLabels), ordered by label frequencies, with the most frequent label assigned index 0. The transformation can be reversed with `ft_index_to_string()`.
+
 ### Transform a data using SQL
 ```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
 # use SQL query with ft_sql_transformer() function
@@ -388,10 +396,16 @@ Another way to use SQL when manipulating the data is to simply use `ft_sql_trans
 
 The difference between the two functions is that the function from `sparklyr` packages will return tibble object, not a data frame.
 
+
+
 ## Split data to training and test set
 ```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
+# first we add column 'species_inx'
+iris_tbl_inx <- iris_tbl %>% 
+  ft_string_indexer("Species", "species_inx")
+
 # split data on training and testing set
-train_test <- iris_tbl %>% 
+train_test <- iris_tbl_inx %>% 
   sdf_partition(training = 0.7, testing = 0.3)
 
 # you can split data set into more than two sets!
@@ -444,26 +458,25 @@ Use Spark’s linear regression to model the linear relationship between a respo
 
 ```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
 # prepare dataset - iris but only with two classes
-iris2_tbl <- iris_tbl %>% 
-  filter(Species != "virginica")
+iris_tbl_inx2 <- iris_tbl %>% 
+  filter(Species != "virginica") %>% 
+  ft_string_indexer("Species", "species_inx")
 
-train_test2 <- iris2_tbl %>% 
+train_test2 <- iris_tbl_inx2 %>% 
   sdf_partition(training = 0.7, testing = 0.3)
 
-training2_tbl <- train_test2$training
-testing2_tbl <- train_test2$testing
+training_tbl2 <- train_test2$training
+testing_tbl2 <- train_test2$testing
 
 # train logistic regression model
-model_logr <- training2_tbl %>%
+model_logr <- training_tbl2 %>%
   ml_logistic_regression(Species ~ Petal_Length + Petal_Width)
 
 # check model summary
 summary(model_logr)
 
 # predict classes for testing set
-pred <- sdf_predict(model_logr, testing2_tbl) %>% 
-  ft_string_indexer("Species", "Species_inx")
-ml_binary_classification_eval(pred, "Species_inx", "probability", metric = "areaUnderROC" )
+pred_logr <- sdf_predict(model_logr, testing_tbl2)
 ```
 
 Use Spark’s logistic regression to perform logistic regression, modeling a binary outcome as a function of one or more explanatory variables.
@@ -476,7 +489,6 @@ model_dt <- training_tbl %>%
 
 # predict classes for testing dataset
 predict_dt <- sdf_predict(model_dt, testing_tbl) %>%
-  ft_string_indexer("Species", "Species_idx") %>%
   collect
 
 # compare predicted classes with real classess

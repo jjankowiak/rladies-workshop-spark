@@ -160,7 +160,7 @@ spark_disconnect(conn)</code></pre>
 # and connection to Spark is established
 
 # read data from csv 
-spark_read_csv(conn, &quot;wine&quot;, &quot;data/wine.csv&quot;)
+spark_read_csv(conn, &quot;titanic&quot;, &quot;data/titanic.csv&quot;)
 
 # copy data.frame from R
 library(MASS) # for dataset Boston
@@ -400,46 +400,60 @@ class(result)</code></pre>
   ft_some_transformation(&quot;x&quot;, &quot;y&quot;, some_other_args)</code></pre>
 <div id="transform-continuous-variable-to-binary" class="section level3">
 <h3>Transform continuous variable to binary</h3>
-<pre class="r"><code># convert continuous column into logical
-house_prices_tbl %&gt;% 
-  ft_binarizer(&quot;age&quot;, &quot;is_old&quot;, 50)
+<pre class="r"><code># creating tibble for new dataset
+iris &lt;- iris
+copy_to(conn, iris, &quot;iris&quot;)
+iris_tbl &lt;- tbl(conn, &quot;iris&quot;)
+
+# be careful - dots in the columns' names have been replaced by underscores!
+glimpse(iris_tbl)
+
+# convert continuous column into logical
+iris_tbl %&gt;% 
+  ft_binarizer(&quot;Petal_Length&quot;, &quot;petal_is_long&quot;, 4)
 
 # when collecting to R
-collected &lt;- house_prices_tbl %&gt;% 
-  ft_binarizer(&quot;age&quot;, &quot;is_old&quot;, 50) %&gt;% 
+collected &lt;- iris_tbl %&gt;% 
+  ft_binarizer(&quot;Petal_Length&quot;, &quot;petal_is_long&quot;, 4) %&gt;% 
   collect() %&gt;% 
-  mutate(is_old = as.logical(is_old))</code></pre>
+  mutate(petal_is_long = as.logical(petal_is_long))</code></pre>
 <p><code>ft_binarizer()</code> function converts continuous variable into logical. The additional argument (referred above as <code>some_other_args</code>) is threshold - the number which splits the scale into 0 and 1 values.</p>
 <p>It’s important to note that the column after transformation consists of DoubleType values so when you collect data back into R you have to transform this column to logical.</p>
 </div>
 <div id="transform-continuous-variable-to-caterogical" class="section level3">
 <h3>Transform continuous variable to caterogical</h3>
 <pre class="r"><code># convert continuous column into categorical
-# [0, 20) - 0, [20, 40) - 1, [40, 60) - 2 ...
-house_prices_tbl %&gt;% 
-  ft_bucketizer(&quot;age&quot;, &quot;age_level&quot;, splits = c(0, 20, 40, 60, 80, Inf))
+# [0, 5) - 0, [5, 6) - 1, [6, 7) - 2 ...
+iris_tbl %&gt;% 
+  ft_bucketizer(&quot;Sepal_Length&quot;, &quot;sepal_length_level&quot;, splits = c(0, 5, 6, 7, Inf))
 
 # when collecting to R
-splits &lt;- c(0, 20, 40, 60, 80, Inf)
-collected &lt;- house_prices_tbl %&gt;% 
-  ft_bucketizer(&quot;age&quot;, &quot;age_level&quot;, splits = splits) %&gt;% 
+splits &lt;- c(0, 5, 6, 7, Inf)
+collected &lt;- iris_tbl %&gt;% 
+  ft_bucketizer(&quot;Sepal_Length&quot;, &quot;sepal_length_level&quot;, splits = splits) %&gt;% 
   collect() %&gt;% 
-  mutate(age_level = factor(age_level))
+  mutate(sepal_length_level = factor(sepal_length_level))
 
 # convert continuous column into categorical by quantiles
-house_prices_tbl %&gt;%
-  ft_bucketizer(&quot;age&quot;, &quot;age_level&quot;, splits = c(0, 20, 40, 60, 80, Inf)) %&gt;% 
-  ft_quantile_discretizer(&quot;age&quot;, &quot;age_level_q&quot;, n.buckets = 5)</code></pre>
+iris_tbl %&gt;%
+  ft_bucketizer(&quot;Sepal_Length&quot;, &quot;sepal_length_level&quot;, splits = c(0, 5, 6, 7, Inf)) %&gt;% 
+  ft_quantile_discretizer(&quot;Sepal_Length&quot;, &quot;sepal_length_level_q&quot;, n.buckets = 4)</code></pre>
 <p><code>ft_bucketizer()</code> is similar to <code>cut()</code> function in basic R - it splits continuous variable into bins. This time, instead for one threshold (as in <code>ft_binarizer()</code>) we pass vector of thresholds.</p>
 <p>The function returns a numeric vector, so if you want to work on the results in R, you need to convert it to a factor.</p>
 <p>When we want cut the continuous variable into buckets by quantiles we use <code>ft_quantile_discretizer()</code> function. Using the argument <code>n.buckets</code> we can determine number of buckets we want.</p>
+</div>
+<div id="encode-character-column-into-numerical-column" class="section level3">
+<h3>Encode character column into numerical column</h3>
+<pre class="r"><code>iris_tbl %&gt;% 
+  ft_string_indexer(&quot;Species&quot;, &quot;species_inx&quot;)</code></pre>
+<p>Some machine learning algorithms require numerical columns instead of string columns. That’s why function <code>ft_string_indexer()</code> is very useful. It encodes a column of labels into a column of label indices. The indices are in [0, numLabels), ordered by label frequencies, with the most frequent label assigned index 0. The transformation can be reversed with <code>ft_index_to_string()</code>.</p>
 </div>
 <div id="transform-a-data-using-sql" class="section level3">
 <h3>Transform a data using SQL</h3>
 <pre class="r"><code># use SQL query with ft_sql_transformer() function
 # we get the same result as from the `dbGetQuery()` function
-result &lt;- house_prices_tbl %&gt;% 
-  ft_sql_transformer(&quot;SELECT nox, rm, age FROM house_prices LIMIT 10&quot;)
+result &lt;- iris_tbl %&gt;% 
+  ft_sql_transformer(&quot;SELECT Sepal_Length, Sepal_width FROM iris WHERE Petal_Width &lt; 1 LIMIT 10&quot;)
 
 # this is still tibble!
 class(result)</code></pre>
@@ -450,12 +464,12 @@ class(result)</code></pre>
 <div id="split-data-to-training-and-test-set" class="section level2">
 <h2>Split data to training and test set</h2>
 <pre class="r"><code># split data on training and testing set
-train_test &lt;- house_prices_tbl %&gt;% 
+train_test &lt;- iris_tbl %&gt;% 
   sdf_partition(training = 0.7, testing = 0.3)
 
 # you can split data set into more than two sets!
 # if the fractions don't add up to one they will be scaled
-house_prices_tbl %&gt;% 
+iris_tbl %&gt;% 
   sdf_partition(set_a = 0.3, set_b = 0.3, set_c = 0.6)
 
 # use indexing operator to access the subset
@@ -466,51 +480,92 @@ testing_tbl &lt;- train_test[[&quot;testing&quot;]]</code></pre>
 </div>
 <div id="machine-learning-functions" class="section level2">
 <h2>Machine learning functions</h2>
-<p>The <code>ml_*()</code> functions take the arguments <code>response</code> and <code>features</code>. But <code>features</code> can also be a formula with main effects. The intercept term can be omitted by using -1.</p>
+<p>The <code>ml_*()</code> functions take the arguments <code>response</code> and <code>features</code>. But <code>features</code> can also be a formula with main effects. The intercept term can be omitted by using -1. Check in help all available arguments for a specific function.</p>
 <pre class="r"><code># equivalent statements
 ml_linear_regression(z ~ -1 + x + y)
 ml_linear_regression(intercept = FALSE, response = &quot;z&quot;, features = c(&quot;x&quot;, &quot;y&quot;))</code></pre>
 <div id="linear-regression" class="section level3">
 <h3>Linear regression</h3>
-<pre class="r"><code># create formula
-ml_formula &lt;- formula(medv ~ crim + age)
-# train linear regression model
-model &lt;- ml_linear_regression(training_tbl, ml_formula)</code></pre>
+<pre class="r"><code># train linear regression model
+model_lr &lt;- training_tbl %&gt;% 
+  select(Petal_Width, Petal_Length) %&gt;%
+  ml_linear_regression(Petal_Length ~ Petal_Width)
+
+# check model summary
+summary(model_lr)
+
+# how well the model fits?
+library(ggplot2)
+iris_tbl %&gt;%
+  select(Petal_Width, Petal_Length) %&gt;%
+  collect %&gt;%
+  ggplot(aes(Petal_Length, Petal_Width)) +
+    geom_point(aes(Petal_Width, Petal_Length)) +
+    geom_abline(aes(slope = coef(model_lr)[2], intercept = coef(model_lr)[1]), color = &quot;red&quot;) +
+    labs(x = &quot;Petal Width&quot;, y = &quot;Petal Length&quot;)</code></pre>
 <p>Use Spark’s linear regression to model the linear relationship between a response variable and one or more explanatory variables.</p>
 </div>
 <div id="logistic-regression" class="section level3">
 <h3>Logistic regression</h3>
-<p>Perform logistic regression on a Spark DataFrame.</p>
-<pre class="r"><code># create formula
-ml_formula &lt;- formula(chas ~ crim + age)
+<pre class="r"><code># prepare dataset - iris but only with two classes
+iris2_tbl &lt;- iris_tbl %&gt;% 
+  filter(Species != &quot;virginica&quot;)
+
+train_test2 &lt;- iris2_tbl %&gt;% 
+  sdf_partition(training = 0.7, testing = 0.3)
+
+training2_tbl &lt;- train_test2$training
+testing2_tbl &lt;- train_test2$testing
+
 # train logistic regression model
-model &lt;- ml_logistic_regression(training_tbl, ml_formula)</code></pre>
+model_logr &lt;- training2_tbl %&gt;%
+  ml_logistic_regression(Species ~ Petal_Length + Petal_Width)
+
+# check model summary
+summary(model_logr)
+
+# predict classes for testing set
+pred &lt;- sdf_predict(model_logr, testing2_tbl) %&gt;% 
+  ft_string_indexer(&quot;Species&quot;, &quot;Species_inx&quot;)
+ml_binary_classification_eval(pred, &quot;Species_inx&quot;, &quot;probability&quot;, metric = &quot;areaUnderROC&quot; )</code></pre>
+<p>Use Spark’s logistic regression to perform logistic regression, modeling a binary outcome as a function of one or more explanatory variables.</p>
 </div>
 <div id="decision-tree" class="section level3">
 <h3>Decision tree</h3>
-<p>ml_decision_tree( x, response, features, max.bins = 32L, max.depth = 5L, type = c(“auto”, “regression”, “classification”), ml.options = ml_options() ) Same options for: ml_gradient_boosted_trees</p>
+<pre class="r"><code># train decision tree model
+model_dt &lt;- training_tbl %&gt;%
+  ml_decision_tree(Species ~ Petal_Length + Petal_Width)
+
+# predict classes for testing dataset
+predict_dt &lt;- sdf_predict(model_dt, testing_tbl) %&gt;%
+  ft_string_indexer(&quot;Species&quot;, &quot;Species_idx&quot;) %&gt;%
+  collect
+
+# compare predicted classes with real classess
+table(predict_dt$Species_idx, predict_dt$prediction)
+
+# feature importance
+ml_tree_feature_importance(conn, model_dt)</code></pre>
 <p>Perform regression or classification using decision trees.</p>
-<pre class="r"><code># create formula
-ml_formula &lt;- formula(chas ~ crim + age)
-# train logistic regression model
-model &lt;- ml_decision_tree(training_tbl, ml_formula)</code></pre>
 </div>
 <div id="random-forests" class="section level3">
 <h3>Random forests</h3>
 <p>Use Spark’s Random Forest to perform regression or multiclass classification.</p>
-<p>ml_random_forest( x, response, features, max.bins = 32L, max.depth = 5L, num.trees = 20L, type = c(“auto”, “regression”, “classification”), ml.options = ml_options() )</p>
-<pre class="r"><code># create formula
-ml_formula &lt;- formula(chas ~ crim + age)
-# train logistic regression model
-model &lt;- ml_random_forest(training_tbl, ml_formula)</code></pre>
+<pre class="r"><code># train random forest model
+model_rf &lt;- training_tbl %&gt;%
+  ml_random_forest(Species ~ Petal_Length + Petal_Width, type = &quot;classification&quot;)
+
+# predict classes for testing dataset
+predict_rf &lt;- sdf_predict(model_rf, testing_tbl) %&gt;%
+  ft_string_indexer(&quot;Species&quot;, &quot;Species_idx&quot;) %&gt;%
+  collect
+
+# compare predicted classes with real classess
+ml_classification_eval()</code></pre>
 </div>
 <div id="utilities" class="section level3">
 <h3>Utilities</h3>
-<pre class="r"><code># create formula
-ml_formula &lt;- formula(chas ~ crim + age)
-# train logistic regression model
-model &lt;- ml_random_forest(training_tbl, ml_formula)
-# feature importance
+<pre class="r"><code># feature importance
 ml_tree_feature_importance(conn, model)
 
 # evaluation
@@ -547,6 +602,10 @@ metric = &quot;f1&quot; )</code></pre>
 <li><a href="https://www.datacamp.com/courses/introduction-to-spark-in-r-using-sparklyr" class="uri">https://www.datacamp.com/courses/introduction-to-spark-in-r-using-sparklyr</a></li>
 <li><a href="https://beta.rstudioconnect.com/content/1518/notebook-classification.html" class="uri">https://beta.rstudioconnect.com/content/1518/notebook-classification.html</a></li>
 </ul>
+</div>
+<div id="todo" class="section level1">
+<h1>TODO:</h1>
+<p>zamiast iris_tbl powinno chyba byc trainig_tbl Doda ft_string_indexer! logistic regression zrobic na iris ale ograniczyc sie tylko do dwoch klas random forest i dt - prediction jak zroboc zeby tabelka byla ok ft_indexer zrobić przed podziałem na test i tren titanic do workflow</p>
 </div>
 
 
