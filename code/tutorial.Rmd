@@ -377,10 +377,10 @@ When we want cut the continuous variable into buckets by quantiles we use `ft_qu
 ### Encode character column into numerical column
 ```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
 iris_tbl %>% 
-  ft_string_indexer("Species", "species_inx")
+  ft_string_indexer("Species", "species_ind")
 ```
 
-Some machine learning algorithms require numerical columns instead of string columns. That's why function `ft_string_indexer()` is very useful. It encodes a column of labels into a column of label indices. The indices are in [0, numLabels), ordered by label frequencies, with the most frequent label assigned index 0. The transformation can be reversed with `ft_index_to_string()`.
+Machine learning algorithms from `sparklyr` return encoded prediciton values instead of original values. That's why we will use `ft_string_indexer()` to encode dependent variables in our datasets. It encodes a column of labels into a column of label indices. The indices are in [0, numLabels), ordered by label frequencies, with the most frequent label assigned index 0. The transformation can be reversed with `ft_index_to_string()`.
 
 ### Transform a data using SQL
 ```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
@@ -397,15 +397,15 @@ Another way to use SQL when manipulating the data is to simply use `ft_sql_trans
 The difference between the two functions is that the function from `sparklyr` packages will return tibble object, not a data frame.
 
 
-
 ## Split data to training and test set
+
 ```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
-# first we add column 'species_inx'
-iris_tbl_inx <- iris_tbl %>% 
-  ft_string_indexer("Species", "species_inx")
+# first we add column 'species_ind'
+iris_tbl_ind <- iris_tbl %>% 
+  ft_string_indexer("Species", "Species_ind")
 
 # split data on training and testing set
-train_test <- iris_tbl_inx %>% 
+train_test <- iris_tbl_ind %>% 
   sdf_partition(training = 0.7, testing = 0.3)
 
 # you can split data set into more than two sets!
@@ -435,7 +435,7 @@ ml_linear_regression(intercept = FALSE, response = "z", features = c("x", "y"))
 ### Linear regression
 ```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
 # train linear regression model
-model_lr <- training_tbl %>% 
+model_lr <- iris_tbl %>% 
   select(Petal_Width, Petal_Length) %>%
   ml_linear_regression(Petal_Length ~ Petal_Width)
 
@@ -458,11 +458,11 @@ Use Spark’s linear regression to model the linear relationship between a respo
 
 ```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
 # prepare dataset - iris but only with two classes
-iris_tbl_inx2 <- iris_tbl %>% 
+iris_tbl_ind2 <- iris_tbl %>% 
   filter(Species != "virginica") %>% 
-  ft_string_indexer("Species", "species_inx")
+  ft_string_indexer("Species", "Species_ind")
 
-train_test2 <- iris_tbl_inx2 %>% 
+train_test2 <- iris_tbl_ind2 %>% 
   sdf_partition(training = 0.7, testing = 0.3)
 
 training_tbl2 <- train_test2$training
@@ -470,13 +470,22 @@ testing_tbl2 <- train_test2$testing
 
 # train logistic regression model
 model_logr <- training_tbl2 %>%
-  ml_logistic_regression(Species ~ Petal_Length + Petal_Width)
+  ml_logistic_regression(Species_ind ~ Petal_Length + Petal_Width)
 
 # check model summary
 summary(model_logr)
 
 # predict classes for testing set
-pred_logr <- sdf_predict(model_logr, testing_tbl2)
+pred_logr <- sdf_predict(model_logr, testing_tbl2) 
+
+# compare predicted classes with real classess (in R)
+result_logr <- pred_logr %>% 
+  select("Species_ind", "prediction") %>% 
+  collect()
+table(result_logr$prediction, result_logr$Species_ind)
+
+# model evaluation
+ml_binary_classification_eval(pred_logr, "Species_ind", "prediction", metric = "areaUnderROC")
 ```
 
 Use Spark’s logistic regression to perform logistic regression, modeling a binary outcome as a function of one or more explanatory variables.
@@ -485,17 +494,22 @@ Use Spark’s logistic regression to perform logistic regression, modeling a bin
 ```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
 # train decision tree model
 model_dt <- training_tbl %>%
-  ml_decision_tree(Species ~ Petal_Length + Petal_Width)
+  ml_decision_tree(Species_ind ~ Petal_Length + Petal_Width)
 
 # predict classes for testing dataset
-predict_dt <- sdf_predict(model_dt, testing_tbl) %>%
-  collect
+predict_dt <- sdf_predict(model_dt, testing_tbl)
 
-# compare predicted classes with real classess
-table(predict_dt$Species_idx, predict_dt$prediction)
+# compare predicted classes with real classess (in R)
+result_dt <- predict_dt %>% 
+  select("Species_ind", "prediction") %>% 
+  collect()
+table(result_dt$prediction, result_dt$Species_ind)
 
 # feature importance
 ml_tree_feature_importance(conn, model_dt)
+
+# evaluate model
+ml_classification_eval(predict_dt, "Species_ind", "prediction", metric = "accuracy")
 ```
 
 Perform regression or classification using decision trees.
@@ -505,48 +519,108 @@ Use Spark’s Random Forest to perform regression or multiclass classification.
 
 ```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
 # train random forest model
-model_rf <- training_tbl %>%
-  ml_random_forest(Species ~ Petal_Length + Petal_Width, type = "classification")
+model_rf <- testing_tbl %>%
+  ml_random_forest(Species_ind ~ Petal_Length + Petal_Width, type = "classification")
 
 # predict classes for testing dataset
-predict_rf <- sdf_predict(model_rf, testing_tbl) %>%
-  ft_string_indexer("Species", "Species_idx") %>%
-  collect
+predict_rf <- sdf_predict(model_rf, testing_tbl)
 
-# compare predicted classes with real classess
-ml_classification_eval()
+# compare predicted classes with real classess (in R)
+result_rf <- predict_rf %>% 
+  select("Species_ind", "prediction") %>% 
+  collect()
+table(result_rf$prediction, result_rf$Species_ind)
+
+# feature importance
+ml_tree_feature_importance(conn, model_rf)
+
+# evaluate model
+ml_classification_eval(predict_rf, "Species_ind", "prediction", metric = "accuracy")
 ```
 
 ### Utilities
+There are few function which are very useful for interacting with Spark model fits:
 
-```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
-
-# feature importance
-ml_tree_feature_importance(conn, model)
-
-# evaluation
-ml_classification_eval()
-
-ml_binary_classification_eval( predicted_tbl_spark, label, score,
-metric = "areaUnderROC" )
-ml_classification_eval( predicted_tbl_spark, label, predicted_lbl,
-metric = "f1" )
-```
-Functions for interacting with Spark ML model fits.
-
-- ml_binary_classification_eval	- Calculates the area under the curve for a binary classification model.
-- ml_classification_eval -	Calculates performance metrics (i.e. f1, precision, recall, weightedPrecision, weightedRecall, and accuracy) for binary and multiclass classification model.
-- ml_tree_feature_importance -	Calculates variable importance for decision trees (i.e. decision trees, random forests, gradient boosted trees).
+- `ml_binary_classification_eval()` - calculates the area under the curve (`metric = "areaUnderROC"`) for a binary classification model,
+- `ml_classification_eval()` - calculates performance metrics (`metric = c("f1", "precision", "recall", "weightedPrecision", "weightedRecall", "accuracy"`) for binary and multiclass classification model.
+- `ml_tree_feature_importance()` - calculates variable importance for decision trees (i.e. decision trees, random forests, gradient boosted trees).
 
 ## Working workflow
 
 An analytic workflow with `sparklyr` might be composed of the following stages. For an example see Example Workflow:
 
-- perform SQL queries through the sparklyr dplyr interface,
+- perform SQL queries through the `sparklyr` `dplyr` interface,
 - use the `sdf_*()` and `ft_*()` family of functions to generate new columns, or partition your data set,
 - choose an appropriate machine learning algorithm from the `ml_*()` family of functions to model your data,
 - inspect the quality of your model fit, and use it to make predictions with new data.
 - collect the results for visualization and further analysis in R
+
+```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
+# read data from csv 
+spark_read_csv(conn, "titanic", "data/titanic.csv")
+titanic_tbl <- tbl(conn, "titanic")
+
+# tidy the data
+titanic_final_tbl <- titanic_tbl %>% 
+  mutate(Parch = as.numeric(Parch), Fare = as.numeric(Fare), Survived = as.character(Survived)) %>% 
+  mutate(family_size = SibSp + Parch + 1) %>% 
+  filter(!is.na(Embarked)) %>% 
+  mutate(Age = if_else(is.na(Age), mean(Age), Age)) %>% 
+  ft_bucketizer("family_size", "family_bucket", splits = c(1,2,5,12)) %>% 
+  mutate(family_bucket = as.character(as.integer(family_bucket))) %>% 
+  select(Survived, Pclass, Sex, Age, SibSp, Parch, Fare, Embarked, family_size) 
+
+# split data
+partition <- titanic_final_tbl %>% 
+  sdf_partition(train = 0.7, test = 0.3)
+train_tbl <- partition$train
+test_tbl <- partition$test
+
+# train the models
+ml_formula <- formula(Survived ~ Pclass + Sex + Age + SibSp + Parch + Fare + Embarked + family_Size)
+
+ml_logr <- ml_logistic_regression(train_tbl, ml_formula)
+ml_dt <- ml_decision_tree(train_tbl, ml_formula)
+ml_rf <- ml_random_forest(train_tbl, ml_formula)
+
+# test data
+ml_models <- list(
+  "Logistic" = ml_log,
+  "Decision Tree" = ml_dt,
+  "Random Forest" = ml_rf
+)
+
+score_test_data <- function(model, data = test_tbl) {
+  pred <- sdf_predict(model, data)
+  select(pred, Survived, prediction)
+}
+
+ml_score <- lapply(ml_models, score_test_data)
+
+# compare results (AUC and accuracy)
+# function for calculating accuracy
+calc_accuracy <- function(data, cutpoint = 0.5){
+  data %>% 
+    mutate(prediction = if_else(prediction > cutpoint, 1.0, 0.0)) %>%
+    ml_classification_eval("prediction", "Survived", "accuracy")
+}
+
+# calculate AUC and accuracy
+perf_metrics <- data.frame(
+  model = names(ml_score),
+  AUC = 100 * sapply(ml_score, ml_binary_classification_eval, "Survived", "prediction"),
+  Accuracy = 100 * sapply(ml_score, calc_accuracy),
+  row.names = NULL, stringsAsFactors = FALSE)
+
+# plot results
+gather(perf_metrics, metric, value, AUC, Accuracy) %>%
+  ggplot(aes(reorder(model, value), value, fill = metric)) + 
+  geom_bar(stat = "identity", position = "dodge") + 
+  coord_flip() +
+  xlab("") +
+  ylab("Percent") +
+  ggtitle("Performance Metrics")
+```
 
 # Sources
 
@@ -555,9 +629,4 @@ An analytic workflow with `sparklyr` might be composed of the following stages. 
 - https://beta.rstudioconnect.com/content/1518/notebook-classification.html
 
 # TODO:
-zamiast iris_tbl powinno chyba byc trainig_tbl
-Doda ft_string_indexer!
-logistic regression zrobic na iris ale ograniczyc sie tylko do dwoch klas
-random forest i dt - prediction jak zroboc zeby tabelka byla ok
-ft_indexer zrobić przed podziałem na test i tren
-titanic do workflow
+naprawic modele w workflow
