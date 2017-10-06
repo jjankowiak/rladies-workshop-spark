@@ -557,12 +557,13 @@ An analytic workflow with `sparklyr` might be composed of the following stages. 
 
 ```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
 # read data from csv 
+library(dplyr)
 spark_read_csv(conn, "titanic", "data/titanic.csv")
 titanic_tbl <- tbl(conn, "titanic")
 
 # tidy the data
 titanic_final_tbl <- titanic_tbl %>% 
-  mutate(Parch = as.numeric(Parch), Fare = as.numeric(Fare), Survived = as.character(Survived)) %>% 
+  mutate(Parch = as.numeric(Parch), Fare = as.numeric(Fare), Survived = as.double(Survived)) %>% 
   mutate(family_size = SibSp + Parch + 1) %>% 
   filter(!is.na(Embarked)) %>% 
   mutate(Age = if_else(is.na(Age), mean(Age), Age)) %>% 
@@ -577,7 +578,7 @@ train_tbl <- partition$train
 test_tbl <- partition$test
 
 # train the models
-ml_formula <- formula(Survived ~ Pclass + Sex + Age + SibSp + Parch + Fare + Embarked + family_Size)
+ml_formula <- formula(Survived ~ Pclass + Sex + Age + SibSp + Parch + Fare + Embarked + family_size)
 
 ml_logr <- ml_logistic_regression(train_tbl, ml_formula)
 ml_dt <- ml_decision_tree(train_tbl, ml_formula)
@@ -585,7 +586,7 @@ ml_rf <- ml_random_forest(train_tbl, ml_formula)
 
 # test data
 ml_models <- list(
-  "Logistic" = ml_log,
+  "Logistic" = ml_logr,
   "Decision Tree" = ml_dt,
   "Random Forest" = ml_rf
 )
@@ -601,7 +602,6 @@ ml_score <- lapply(ml_models, score_test_data)
 # function for calculating accuracy
 calc_accuracy <- function(data, cutpoint = 0.5){
   data %>% 
-    mutate(prediction = if_else(prediction > cutpoint, 1.0, 0.0)) %>%
     ml_classification_eval("prediction", "Survived", "accuracy")
 }
 
@@ -613,6 +613,8 @@ perf_metrics <- data.frame(
   row.names = NULL, stringsAsFactors = FALSE)
 
 # plot results
+library(tidyr)
+library(ggplot2)
 gather(perf_metrics, metric, value, AUC, Accuracy) %>%
   ggplot(aes(reorder(model, value), value, fill = metric)) + 
   geom_bar(stat = "identity", position = "dodge") + 
@@ -627,6 +629,3 @@ gather(perf_metrics, metric, value, AUC, Accuracy) %>%
 - https://spark.rstudio.com/index.html
 - https://www.datacamp.com/courses/introduction-to-spark-in-r-using-sparklyr
 - https://beta.rstudioconnect.com/content/1518/notebook-classification.html
-
-# TODO:
-naprawic modele w workflow

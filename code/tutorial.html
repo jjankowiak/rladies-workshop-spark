@@ -607,12 +607,13 @@ ml_classification_eval(predict_rf, &quot;Species_ind&quot;, &quot;prediction&quo
 <li>collect the results for visualization and further analysis in R</li>
 </ul>
 <pre class="r"><code># read data from csv 
+library(dplyr)
 spark_read_csv(conn, &quot;titanic&quot;, &quot;data/titanic.csv&quot;)
 titanic_tbl &lt;- tbl(conn, &quot;titanic&quot;)
 
 # tidy the data
 titanic_final_tbl &lt;- titanic_tbl %&gt;% 
-  mutate(Parch = as.numeric(Parch), Fare = as.numeric(Fare), Survived = as.character(Survived)) %&gt;% 
+  mutate(Parch = as.numeric(Parch), Fare = as.numeric(Fare), Survived = as.double(Survived)) %&gt;% 
   mutate(family_size = SibSp + Parch + 1) %&gt;% 
   filter(!is.na(Embarked)) %&gt;% 
   mutate(Age = if_else(is.na(Age), mean(Age), Age)) %&gt;% 
@@ -627,7 +628,7 @@ train_tbl &lt;- partition$train
 test_tbl &lt;- partition$test
 
 # train the models
-ml_formula &lt;- formula(Survived ~ Pclass + Sex + Age + SibSp + Parch + Fare + Embarked + family_Size)
+ml_formula &lt;- formula(Survived ~ Pclass + Sex + Age + SibSp + Parch + Fare + Embarked + family_size)
 
 ml_logr &lt;- ml_logistic_regression(train_tbl, ml_formula)
 ml_dt &lt;- ml_decision_tree(train_tbl, ml_formula)
@@ -635,7 +636,7 @@ ml_rf &lt;- ml_random_forest(train_tbl, ml_formula)
 
 # test data
 ml_models &lt;- list(
-  &quot;Logistic&quot; = ml_log,
+  &quot;Logistic&quot; = ml_logr,
   &quot;Decision Tree&quot; = ml_dt,
   &quot;Random Forest&quot; = ml_rf
 )
@@ -651,7 +652,6 @@ ml_score &lt;- lapply(ml_models, score_test_data)
 # function for calculating accuracy
 calc_accuracy &lt;- function(data, cutpoint = 0.5){
   data %&gt;% 
-    mutate(prediction = if_else(prediction &gt; cutpoint, 1.0, 0.0)) %&gt;%
     ml_classification_eval(&quot;prediction&quot;, &quot;Survived&quot;, &quot;accuracy&quot;)
 }
 
@@ -663,6 +663,8 @@ perf_metrics &lt;- data.frame(
   row.names = NULL, stringsAsFactors = FALSE)
 
 # plot results
+library(tidyr)
+library(ggplot2)
 gather(perf_metrics, metric, value, AUC, Accuracy) %&gt;%
   ggplot(aes(reorder(model, value), value, fill = metric)) + 
   geom_bar(stat = &quot;identity&quot;, position = &quot;dodge&quot;) + 
@@ -679,10 +681,6 @@ gather(perf_metrics, metric, value, AUC, Accuracy) %&gt;%
 <li><a href="https://www.datacamp.com/courses/introduction-to-spark-in-r-using-sparklyr" class="uri">https://www.datacamp.com/courses/introduction-to-spark-in-r-using-sparklyr</a></li>
 <li><a href="https://beta.rstudioconnect.com/content/1518/notebook-classification.html" class="uri">https://beta.rstudioconnect.com/content/1518/notebook-classification.html</a></li>
 </ul>
-</div>
-<div id="todo" class="section level1">
-<h1>TODO:</h1>
-<p>naprawic modele w workflow</p>
 </div>
 
 
