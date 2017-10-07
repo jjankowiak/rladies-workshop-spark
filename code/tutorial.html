@@ -160,7 +160,7 @@ spark_disconnect(conn)</code></pre>
 # and connection to Spark is established
 
 # read data from csv 
-spark_read_csv(conn, &quot;titanic&quot;, &quot;data/titanic.csv&quot;)
+spark_read_csv(conn, &quot;titanic&quot;, &quot;data/titanic_spark.csv&quot;)
 
 # copy data.frame from R
 library(MASS) # for dataset Boston
@@ -608,7 +608,7 @@ ml_classification_eval(predict_rf, &quot;Species_ind&quot;, &quot;prediction&quo
 </ul>
 <pre class="r"><code># read data from csv 
 library(dplyr)
-spark_read_csv(conn, &quot;titanic&quot;, &quot;data/titanic.csv&quot;)
+spark_read_csv(conn, &quot;titanic&quot;, &quot;data/titanic_spark.csv&quot;)
 titanic_tbl &lt;- tbl(conn, &quot;titanic&quot;)
 
 # tidy the data

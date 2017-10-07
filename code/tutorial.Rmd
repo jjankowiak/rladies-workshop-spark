@@ -49,7 +49,7 @@ Loading data is a slow process - when working with big data we want to avoid cop
 # and connection to Spark is established
 
 # read data from csv 
-spark_read_csv(conn, "titanic", "data/titanic.csv")
+spark_read_csv(conn, "titanic", "data/titanic_spark.csv")
 
 # copy data.frame from R
 library(MASS) # for dataset Boston
@@ -558,7 +558,7 @@ An analytic workflow with `sparklyr` might be composed of the following stages. 
 ```{r, eval=FALSE, results=FALSE, warning=FALSE, message=FALSE}
 # read data from csv 
 library(dplyr)
-spark_read_csv(conn, "titanic", "data/titanic.csv")
+spark_read_csv(conn, "titanic", "data/titanic_spark.csv")
 titanic_tbl <- tbl(conn, "titanic")
 
 # tidy the data
