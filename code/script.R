@@ -6,7 +6,7 @@ library(DBI)
 
 ##### WORKFLOW #####
 # connect to Spark
-Sys.setenv(JAVA_HOME = "/usr/lib/jvm/java-8-openjdk-amd64")
+# Sys.setenv(JAVA_HOME = "/usr/lib/jvm/java-8-openjdk-amd64")
 conn <- spark_connect(master = "local")
 
 # do some work -here check if connection is established
@@ -46,8 +46,8 @@ print(house_prices_tbl, n = 5, width = 25)
 
 # examine the stucture with str() function
 # it's not what we expected
-str(house_prices_tbl)
 str(Boston)
+str(house_prices_tbl)
 
 # examine the structure with glimpse() function
 glimpse(house_prices_tbl)
@@ -98,7 +98,7 @@ house_prices_tbl %>%
 house_prices_tbl %>% 
   filter(rm > 8)
 
-# ptratio o < 15 and crim < 0.005
+# ptratio o < 15 and crim < 0.02
 house_prices_tbl %>% 
   filter(ptratio < 15, crim < 0.02)
 
@@ -333,9 +333,9 @@ iris_tbl %>%
   select(Petal_Width, Petal_Length) %>%
   collect() %>%
   ggplot(aes(Petal_Length, Petal_Width)) +
-  geom_point(aes(Petal_Width, Petal_Length)) +
-  geom_abline(aes(slope = coef(model_lr)[2], intercept = coef(model_lr)[1]), color = "red") +
-  labs(x = "Petal Width", y = "Petal Length")
+    geom_point(aes(Petal_Width, Petal_Length)) +
+    geom_abline(aes(slope = coef(model_lr)[2], intercept = coef(model_lr)[1]), color = "red") +
+    labs(x = "Petal Width", y = "Petal Length")
 
 
 ## Logistic regression ##
@@ -502,3 +502,4 @@ gather(perf_metrics, metric, value, AUC, Accuracy) %>%
   xlab("") +
   ylab("Percent") +
   ggtitle("Performance Metrics")
+
